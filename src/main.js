@@ -2,7 +2,7 @@ import './styles.css';
 import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 
-const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities' };
+const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About' };
 const icon = (name) => ({
   search: '⌕',
   bell: '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10Z"></path><path d="M10 21h4"></path></svg>',
@@ -22,7 +22,17 @@ function filteredCommunities() {
 
 function header() {
   const user = store.user;
-  const topSearch = state.submittedQuery && state.view === 'discover' ? `<form class="top-search" id="topSearch"><span>${icon('search')}</span><input id="topSearchInput" value="${escapeHTML(state.query)}" aria-label="Search communities"><button type="button" data-action="clear-search" aria-label="Clear search">×</button></form>` : '';
+  const activeComm = state.selected ? (communities.find(c => c.id === state.selected) || communities[0]) : null;
+  const isDetail = state.view === 'detail';
+
+  const topSearch = `
+    <form class="topbar-search-form" id="topSearch">
+      <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="topSearchInput" value="${escapeHTML(state.query)}" placeholder="Search" aria-label="Search communities">
+      ${state.query ? `<button type="button" class="topbar-search-clear" data-action="clear-search" aria-label="Clear search">×</button>` : ''}
+    </form>
+  `;
+  
   const profileMenu = user ? `
     <div class="profile-menu ${state.profileMenu ? 'active' : ''}" id="userProfileMenu">
     <div class="profile-menu-email">${escapeHTML(user.email)}</div>
@@ -41,10 +51,18 @@ function header() {
 
   const brandArea = `
     <div class="brand-container" id="brandContainer">
-      <button class="wordmark" data-action="toggle-brand-menu"><span>skill</span>space</button>
-      <button class="community-switcher-btn" data-action="toggle-brand-menu" title="Switch communities" aria-label="Switch communities">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"></polyline><polyline points="7 9 12 4 17 9"></polyline></svg>
-      </button>
+      ${isDetail && activeComm ? `
+        <div class="community-header-brand" data-action="toggle-brand-menu">
+          <img src="${activeComm.creatorAvatar || activeComm.cover}" class="community-brand-icon" alt="">
+          <span class="community-brand-name">${escapeHTML(activeComm.title)}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+      ` : `
+        <button class="wordmark" data-action="toggle-brand-menu"><span>skill</span>space</button>
+        <button class="community-switcher-btn" data-action="toggle-brand-menu" title="Switch communities" aria-label="Switch communities">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"></polyline><polyline points="7 9 12 4 17 9"></polyline></svg>
+        </button>
+      `}
 
       <div class="brand-dropdown-menu ${state.brandMenu ? 'active' : ''}" id="brandDropdownMenu">
         <div class="brand-search-row">
@@ -77,7 +95,41 @@ function header() {
       </div>
     </div>
   `;
-  return `<header class="topbar">${brandArea}${topSearch}<div class="top-actions">${user ? `<button class="round-button" data-action="chats" aria-label="Chats">${icon('chat')}<i>1</i></button><button class="round-button" data-action="notifications" aria-label="Notifications">${icon('bell')}<i>3</i></button><div class="profile-control" id="profileControlContainer"><button class="avatar" data-action="profile" aria-label="Account menu">${initials()}</button>${profileMenu}</div>` : `<button class="auth-nav-button" data-action="login">LOG IN</button><button class="auth-nav-button" data-action="register">SIGN UP</button>`}</div></header>`;
+
+  const subTabs = isDetail ? `
+    <div class="community-subnav-bar">
+      <div class="subnav-container">
+        ${['Community', 'Classroom', 'Calendar', 'Members', 'Map', 'Leaderboards', 'About'].map(tab => `
+          <button class="subnav-tab ${state.communityTab === tab ? 'active' : ''}" data-action="select-subnav-tab" data-tab="${tab}">${tab}</button>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  return `
+    <header class="topbar-wrapper">
+      <div class="topbar-container">
+        <div class="topbar-left-group">
+          ${brandArea}
+          ${topSearch}
+        </div>
+        <div class="top-actions">
+          ${user ? `
+            <button class="round-button" data-action="chats" aria-label="Chats">${icon('chat')}<i>1</i></button>
+            <button class="round-button" data-action="notifications" aria-label="Notifications">${icon('bell')}<i>3</i></button>
+            <div class="profile-control" id="profileControlContainer">
+              <button class="avatar" data-action="profile" aria-label="Account menu">${initials()}</button>
+              ${profileMenu}
+            </div>
+          ` : `
+            <button class="auth-nav-button" data-action="login">LOG IN</button>
+            <button class="auth-nav-button" data-action="register">SIGN UP</button>
+          `}
+        </div>
+      </div>
+      ${subTabs}
+    </header>
+  `;
 }
 
 function card(community, index) {
@@ -102,8 +154,174 @@ function renderCommunityGrid() {
 
 function detailView() {
   const community = communities.find((item) => item.id === state.selected) || communities[0];
-  const posts = [...store.posts.filter((post) => post.communityId === community.id), { communityId: community.id, name: 'Maya Chen', role: 'Host', text: 'Welcome to the room. What are you working on this week?', time: '2h' }, { communityId: community.id, name: 'Arjun Patel', role: 'Member', text: 'Just shipped my first automation workflow. The tiny wins are adding up.', time: '5h' }];
-  return `<main class="detail-page"><section class="community-hero" style="--accent:${community.accent}"><img src="${community.cover}" alt=""><div class="hero-overlay"><span class="card-tag">${community.tag}</span><p class="eyebrow">${community.category} · ${community.accessType} community</p><h1>${community.title}</h1><p>${community.description}</p><div class="hero-meta"><span><strong>${community.members}</strong> members</span><span>${community.price}</span><button class="solid-button" data-action="join">${community.priceType === 'Free' ? 'Join community' : 'View membership'}</button></div></div></section><div class="detail-columns"><section><div class="section-title"><div><p class="kicker">The conversation</p><h2>Latest from the room</h2></div><span class="live-dot">● Active now</span></div>${store.user ? `<form class="post-composer" id="postForm"><div class="avatar">${initials()}</div><input name="text" required placeholder="Share something with the room..."><button class="solid-button small">Post</button></form>` : `<div class="signin-note">Join the conversation <button class="text-button" data-action="login">Log in to post</button></div>`}${posts.map((post) => `<article class="post"><div class="post-avatar">${post.name.slice(0, 1)}</div><div><div class="post-byline"><strong>${escapeHTML(post.name)}</strong><span>${post.role}</span><time>${post.time}</time></div><p>${escapeHTML(post.text)}</p><div class="post-actions">♡ Like · ◌ Reply · ⋯ More</div></div></article>`).join('')}</section><aside class="detail-aside"><div class="aside-block"><p class="kicker">Inside this room</p><h3>Learn, share, ship.</h3><ul><li>Weekly live workshops</li><li>Resource library and templates</li><li>Friendly peer feedback</li></ul></div><div class="aside-block"><p class="kicker">Hosted by</p><div class="host"><div class="host-avatar">E</div><div><strong>Evelyn James</strong><span>Creator · 4 communities</span></div></div></div></aside></div></main>`;
+  const galleryImages = [
+    community.cover,
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80'
+  ];
+  const currentMediaImage = galleryImages[state.selectedMediaIndex] || galleryImages[0];
+
+  const svgIcons = {
+    globe: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"></path></svg>',
+    users: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+    tag: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>',
+    user: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'
+  };
+
+  return `
+    <main class="skool-about-page">
+      <div class="skool-about-layout">
+        <!-- Left Main Content Column -->
+        <div class="skool-about-main">
+          <!-- Community Header Block -->
+          <div class="about-title-block">
+            <h1 class="about-community-heading">${escapeHTML(community.title)}</h1>
+            <div class="about-star-rating-row">
+              <span class="star-gold">★ ★ ★ ★ ★</span>
+              <span class="rating-val">${community.rating || '5.0'}</span>
+              <span class="review-count-text">· ${community.reviewCount || 93} reviews</span>
+            </div>
+          </div>
+
+          <!-- Video / Media Screen Container -->
+          <div class="media-screen-box">
+            <img src="${currentMediaImage}" class="media-screen-img" alt="${escapeHTML(community.title)} presentation">
+            <div class="media-play-overlay">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <span class="media-timestamp-badge">4:52</span>
+          </div>
+
+          <!-- Media Thumbnails Selector Row -->
+          <div class="media-thumbs-row">
+            ${galleryImages.map((img, idx) => `
+              <button class="media-thumb-item ${state.selectedMediaIndex === idx ? 'active' : ''}" data-action="select-media-thumb" data-index="${idx}">
+                ${idx === 0 ? `<div class="thumb-play-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>` : ''}
+                <img src="${img}" alt="Thumbnail ${idx + 1}">
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Professional Meta Bar (No emojis) -->
+          <div class="about-meta-bar">
+            <div class="meta-item">
+              ${svgIcons.globe}
+              <span>${escapeHTML(community.accessType)}</span>
+            </div>
+            <div class="meta-item">
+              ${svgIcons.users}
+              <span>${escapeHTML(community.members)} members</span>
+            </div>
+            <div class="meta-item">
+              ${svgIcons.tag}
+              <span>${escapeHTML(community.price)}</span>
+            </div>
+            <div class="meta-item">
+              ${svgIcons.user}
+              <span>By ${escapeHTML(community.creatorName || 'Creator')}</span>
+            </div>
+          </div>
+
+          <!-- Detailed Exaggerated Paragraphs -->
+          <div class="about-copy-section">
+            ${(community.aboutParagraphs || []).map(para => `
+              <p class="about-paragraph">${escapeHTML(para)}</p>
+            `).join('')}
+
+            ${community.highlights ? `
+              <ul class="about-check-list">
+                ${community.highlights.map(item => `
+                  <li>
+                    <svg class="check-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>${escapeHTML(item)}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            ` : ''}
+          </div>
+
+          <!-- Reviews Section -->
+          <div class="about-reviews-container">
+            <div class="reviews-title-row">
+              <span class="star-gold-lg">★</span>
+              <h2>${community.rating || '5.0'} · ${community.reviewCount || 93} reviews</h2>
+            </div>
+
+            <div class="reviews-cards-list">
+              ${(community.reviews || []).map(r => `
+                <div class="review-item-card">
+                  <div class="review-item-header">
+                    <div class="review-user-avatar">${r.author.slice(0, 1).toUpperCase()}</div>
+                    <div class="review-user-meta">
+                      <div class="review-user-name">${escapeHTML(r.author)} <span class="star-gold-sm">★ ★ ★ ★ ★</span></div>
+                      <div class="review-user-sub">${escapeHTML(r.time)} · <span class="member-status-tag">${escapeHTML(r.status)}</span></div>
+                    </div>
+                  </div>
+                  <p class="review-body-text">${escapeHTML(r.text)}</p>
+                </div>
+              `).join('')}
+            </div>
+
+            <button class="see-more-link" data-action="see-more-reviews">See more</button>
+          </div>
+
+          <div class="about-footer-legal">
+            <a href="#" onclick="return false;">Privacy and terms</a>
+          </div>
+        </div>
+
+        <!-- Sticky Right Sidebar Card -->
+        <aside class="skool-about-sidebar">
+          <div class="sticky-sidebar-card">
+            <div class="sidebar-cover-header">
+              <img src="${community.cover}" alt="${escapeHTML(community.title)} cover">
+            </div>
+
+            <div class="sidebar-card-content">
+              <h2 class="sidebar-comm-title">${escapeHTML(community.title)}</h2>
+              <div class="sidebar-comm-url">skool.com/${community.slug || 'community'}</div>
+              <p class="sidebar-comm-desc">${escapeHTML(community.description)}</p>
+
+              <div class="sidebar-stats-row">
+                <div class="stat-col">
+                  <strong>${community.members}</strong>
+                  <span>Members</span>
+                </div>
+                <div class="stat-col">
+                  <strong>${community.onlineCount || '324'}</strong>
+                  <span>Online</span>
+                </div>
+                <div class="stat-col">
+                  <strong>${community.adminsCount || '12'}</strong>
+                  <span>Admins</span>
+                </div>
+              </div>
+
+              <!-- Avatar Stack -->
+              <div class="sidebar-avatar-stack">
+                <img src="https://randomuser.me/api/portraits/women/44.jpg" class="stack-avatar" alt="">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" class="stack-avatar" alt="">
+                <img src="https://randomuser.me/api/portraits/women/68.jpg" class="stack-avatar" alt="">
+                <img src="https://randomuser.me/api/portraits/men/45.jpg" class="stack-avatar" alt="">
+                <img src="https://randomuser.me/api/portraits/women/24.jpg" class="stack-avatar" alt="">
+                <img src="https://randomuser.me/api/portraits/men/22.jpg" class="stack-avatar" alt="">
+                <img src="https://randomuser.me/api/portraits/women/12.jpg" class="stack-avatar" alt="">
+              </div>
+
+              <!-- Prominent Join Group Button -->
+              <button class="skool-join-button" data-action="join">JOIN GROUP</button>
+
+              <div class="sidebar-powered-by">
+                Powered by <strong>skillspace</strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  `;
 }
 
 function getContributionData(selectedGroup = 'All communities') {
@@ -780,7 +998,7 @@ function closeAuthModal() {
   backdrop.classList.add('is-closing');
   setTimeout(() => { backdrop.remove(); state.modal = null; }, 220);
 }
-function refreshHeader() { const currentHeader = document.querySelector('.topbar'); if (!currentHeader) return; currentHeader.outerHTML = header(); document.querySelectorAll('.topbar [data-action]').forEach((element) => element.addEventListener('click', () => actions(element.dataset.action))); }
+function refreshHeader() { const currentHeader = document.querySelector('.topbar-wrapper'); if (!currentHeader) return; currentHeader.outerHTML = header(); document.querySelectorAll('.topbar-wrapper [data-action]').forEach((element) => element.addEventListener('click', () => actions(element.dataset.action, element))); }
 async function hashPassword(password) { const bytes = new TextEncoder().encode(password); const digest = await crypto.subtle.digest('SHA-256', bytes); return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(''); }
 function findAuthUser(email, passwordHash) { return [...store.users, ...demoUsers].find((user) => user.email.toLowerCase() === email.toLowerCase() && user.passwordHash === passwordHash); }
 function setAuthMessage(text, type = 'error') { state.authMessage = { text, type }; const message = document.querySelector('.auth-message'); if (message) { message.textContent = text; message.className = `auth-message ${type}`; } else { const currentModal = document.querySelector('.modal-backdrop'); if (currentModal) currentModal.outerHTML = modal(); bindAuth(); } }
@@ -790,7 +1008,7 @@ function bind() {
   document.querySelectorAll('[data-auth]:not(.modal-backdrop [data-auth])').forEach((element) => element.addEventListener('click', () => { state.authMode = element.dataset.auth; state.modal = 'auth'; mountAuthModal(); }));
   document.querySelectorAll('[data-action]').forEach((element) => element.addEventListener('click', (event) => {
     event.stopPropagation();
-    actions(element.dataset.action);
+    actions(element.dataset.action, element);
   }));
   document.querySelectorAll('[data-category]').forEach((element) => element.addEventListener('click', () => { state.category = element.dataset.category; render(); }));
   document.querySelector('#search')?.addEventListener('input', (event) => { state.query = event.target.value; });
@@ -899,7 +1117,7 @@ document.addEventListener('click', (event) => {
   }
 });
 
-function actions(action) {
+function actions(action, element) {
   if (action === 'discover' || action === 'reset') {
     state.view = 'discover';
     state.profileMenu = false;
@@ -1002,6 +1220,24 @@ function actions(action) {
       render();
       showToast(`Theme switched to ${state.themeMode} mode!`);
     }
+  } else if (action === 'select-media-thumb') {
+    const thumbBtn = document.querySelector(`[data-action="select-media-thumb"][data-index="${element?.dataset.index}"]`);
+    const idx = Number(element?.dataset.index || 0);
+    state.selectedMediaIndex = idx;
+    render();
+  } else if (action === 'select-subnav-tab') {
+    state.communityTab = element?.dataset.tab || 'About';
+    render();
+  } else if (action === 'select-community') {
+    const id = Number(element?.dataset.id || 1);
+    state.selected = id;
+    state.view = 'detail';
+    state.selectedMediaIndex = 0;
+    state.communityTab = 'About';
+    state.brandMenu = false;
+    render();
+  } else if (action === 'see-more-reviews') {
+    showToast('All reviews loaded');
   } else if (action === 'change-photo' || action === 'change-email' || action === 'change-password' || action === 'logout-everywhere' || action === 'add-payment-method') {
     const messages = {
       'change-photo': 'Photo uploader ready',
