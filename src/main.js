@@ -25,18 +25,18 @@ function header() {
   const topSearch = state.submittedQuery && state.view === 'discover' ? `<form class="top-search" id="topSearch"><span>${icon('search')}</span><input id="topSearchInput" value="${escapeHTML(state.query)}" aria-label="Search communities"><button type="button" data-action="clear-search" aria-label="Clear search">×</button></form>` : '';
   const profileMenu = user ? `
     <div class="profile-menu ${state.profileMenu ? 'active' : ''}" id="userProfileMenu">
-      <div class="profile-menu-email">${escapeHTML(user.email)}</div>
-      <button data-action="profile-page">Profile</button>
-      <button data-action="settings">Settings</button>
-      <button data-action="affiliates">Affiliates</button>
-      <div class="profile-menu-divider"></div>
-      <button class="profile-menu-muted" data-action="language">${icon('globe')} Language</button>
-      <button class="profile-menu-muted" data-action="help">Help center</button>
-      <button class="profile-menu-muted" data-action="create">Create a community</button>
-      <button class="profile-menu-muted" data-action="discover">Discover communities</button>
-      <div class="profile-menu-divider logout-divider"></div>
-      <button class="profile-menu-muted" data-action="logout">Log out</button>
-    </div>
+    <div class="profile-menu-email">${escapeHTML(user.email)}</div>
+    <button data-action="profile-page">Profile</button>
+    <button data-action="settings">Settings</button>
+    <button data-action="affiliates">Affiliates</button>
+    <div class="profile-menu-divider"></div>
+    <button class="profile-menu-muted" data-action="language">${icon('globe')} Language</button>
+    <button class="profile-menu-muted" data-action="help">Help center</button>
+    <button class="profile-menu-muted" data-action="create">Create a community</button>
+    <button class="profile-menu-muted" data-action="discover">Discover communities</button>
+    <div class="profile-menu-divider logout-divider"></div>
+    <button class="profile-menu-muted" data-action="logout">Log out</button>
+  </div>
   ` : '';
 
   const brandArea = `
@@ -77,7 +77,7 @@ function header() {
       </div>
     </div>
   `;
-  return `<header class="topbar">${brandArea}${topSearch}<nav><button class="nav-link active" data-action="discover">Explore</button><button class="nav-link" data-action="create">Create a community <b>+</b></button></nav><div class="top-actions">${user ? `<button class="round-button" data-action="chats" aria-label="Chats">${icon('chat')}<i>1</i></button><button class="round-button" data-action="notifications" aria-label="Notifications">${icon('bell')}<i>3</i></button><div class="profile-control" id="profileControlContainer"><button class="avatar" data-action="profile" aria-label="Account menu">${initials()}</button>${profileMenu}</div>` : `<button class="auth-nav-button" data-action="login">LOG IN</button><button class="auth-nav-button" data-action="register">SIGN UP</button>`}</div></header>`;
+  return `<header class="topbar">${brandArea}${topSearch}<div class="top-actions">${user ? `<button class="round-button" data-action="chats" aria-label="Chats">${icon('chat')}<i>1</i></button><button class="round-button" data-action="notifications" aria-label="Notifications">${icon('bell')}<i>3</i></button><div class="profile-control" id="profileControlContainer"><button class="avatar" data-action="profile" aria-label="Account menu">${initials()}</button>${profileMenu}</div>` : `<button class="auth-nav-button" data-action="login">LOG IN</button><button class="auth-nav-button" data-action="register">SIGN UP</button>`}</div></header>`;
 }
 
 function card(community, index) {
