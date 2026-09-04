@@ -73,12 +73,12 @@ function header() {
           </button>
         </div>
         <div class="brand-community-list" id="brandCommunityList">
-          ${communities.slice(0, 3).map(comm => `
+          ${(state.joinedCommunities || []).length > 0 ? (state.joinedCommunities.map(id => communities.find(c => c.id === id)).filter(Boolean)).map(comm => `
             <div class="brand-community-item" data-action="select-community" data-id="${comm.id}">
               <img src="${comm.cover}" class="brand-comm-avatar" alt="${escapeHTML(comm.title)}">
               <span class="brand-comm-title">${escapeHTML(comm.title)}</span>
             </div>
-          `).join('')}
+          `).join('') : ''}
         </div>
         <button class="brand-menu-item" data-action="create">
           <div class="brand-item-icon">
@@ -144,6 +144,82 @@ function discoverView() {
   const hasActiveFilters = state.price !== 'All' || state.access !== 'All' || state.sort !== 'Trending';
 
   return `<main class="discover-page"><section class="intro"><div><p class="kicker">A better place to belong</p><h1>Discover communities</h1><p class="intro-copy">or <button class="inline-create" data-action="create">create your own</button></p></div></section><section class="catalog-toolbar"><div class="searchbox">${icon('search')}<input id="search" value="${escapeHTML(state.query)}" placeholder="Search communities, topics, people..." aria-label="Search communities"></div><div class="filter-row">${categories.map((category) => `<button class="chip ${state.category === category ? 'selected' : ''}" data-category="${category}">${category}</button>`).join('')}<div class="filter-dropdown-container" id="filterDropdownContainer"><button class="chip filter-dropdown-btn" data-action="toggle-filter-menu" style="border-color:${hasActiveFilters ? 'rgb(61, 91, 169)' : 'inherit'}; font-weight:${hasActiveFilters ? '700' : 'normal'}">Filter <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></button><div class="filter-menu-popup" id="filterPopup"><div class="filter-grid"><div class="filter-column"><div class="filter-header">Price</div><label class="filter-radio-label"><input type="radio" name="priceFilter" value="All" class="custom-radio" ${state.price === 'All' ? 'checked' : ''} data-filter-type="price"><span>All</span></label><label class="filter-radio-label"><input type="radio" name="priceFilter" value="Free" class="custom-radio" ${state.price === 'Free' ? 'checked' : ''} data-filter-type="price"><span>Free</span></label><label class="filter-radio-label"><input type="radio" name="priceFilter" value="Paid" class="custom-radio" ${state.price === 'Paid' ? 'checked' : ''} data-filter-type="price"><span>Paid</span></label></div><div class="filter-column"><div class="filter-header">Type</div><label class="filter-radio-label"><input type="radio" name="accessFilter" value="All" class="custom-radio" ${state.access === 'All' ? 'checked' : ''} data-filter-type="access"><span>All</span></label><label class="filter-radio-label"><input type="radio" name="accessFilter" value="Private" class="custom-radio" ${state.access === 'Private' ? 'checked' : ''} data-filter-type="access"><span>Private</span></label><label class="filter-radio-label"><input type="radio" name="accessFilter" value="Public" class="custom-radio" ${state.access === 'Public' ? 'checked' : ''} data-filter-type="access"><span>Public</span></label></div><div class="filter-column"><div class="filter-header">Sort</div><label class="filter-radio-label"><input type="radio" name="sortFilter" value="Trending" class="custom-radio" ${state.sort === 'Trending' ? 'checked' : ''} data-filter-type="sort"><span>Trending</span></label><label class="filter-radio-label"><input type="radio" name="sortFilter" value="Top" class="custom-radio" ${state.sort === 'Top' ? 'checked' : ''} data-filter-type="sort"><span>Top</span></label></div></div><div class="filter-footer"><span style="color:#858990; margin-right:6px;">Language</span> English<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px;"><polyline points="6 9 12 15 18 9"></polyline></svg></div></div></div></div></section>${resultHeading}<section class="catalog-heading"><div><p class="kicker">Curated for you</p><h2>Communities worth your time <span>${results.length}</span></h2></div><p class="catalog-note">Updated weekly · <b>12,480</b> active members</p></section><div class="community-grid">${results.length ? results.map(card).join('') : `<div class="empty"><strong>No communities found.</strong><p>Try a broader search or reset your filters.</p><button class="outline-button" data-action="reset">Reset filters</button></div>`}</div></main>`;
+}
+
+function createCommunityView() {
+  const carouselCards = communities.slice(0, 5).map((comm) => {
+    let earnings = 'New';
+    if (comm.priceType === 'Paid' && comm.members) {
+      const numMembers = parseFloat(comm.members) * (comm.members.includes('k') ? 1000 : 1);
+      const priceNum = parseFloat(comm.price.replace(/[^0-9.]/g, '')) || 9;
+      const estEarnings = Math.round(numMembers * priceNum);
+      earnings = `Earns $${estEarnings.toLocaleString()}/month`;
+    }
+    return {
+      id: comm.id,
+      title: comm.title,
+      badgeText: comm.title,
+      earnings: earnings,
+      image: comm.cover
+    };
+  });
+
+  const currentSlide = state.createSlideIndex || 0;
+
+  return `
+    <main class="create-community-page">
+      <section class="create-community-hero">
+        <div class="create-community-container">
+          <div class="create-community-logo">
+            <span class="logo-text"><span>skill</span>space</span>
+          </div>
+          <h1 class="create-community-title">Build a community around your passion</h1>
+          <h2 class="create-community-subtitle">Get discovered by 30 million users</h2>
+          <p class="create-community-stats">Join 200k communities earning $1 billion per year</p>
+
+          <div class="community-carousel-wrapper">
+            <div class="community-carousel-deck">
+              ${carouselCards.map((cardItem, idx) => {
+                let posClass = 'next-slide';
+                if (idx === currentSlide) posClass = 'active-slide';
+                else if (idx === (currentSlide - 1 + carouselCards.length) % carouselCards.length) posClass = 'prev-slide';
+
+                return `
+                  <div class="carousel-card-item ${posClass}" data-slide-index="${idx}">
+                    <img src="${cardItem.image}" alt="${escapeHTML(cardItem.title)}" class="carousel-card-img">
+                    <div class="carousel-card-badge">
+                      <div class="badge-title">${escapeHTML(cardItem.badgeText)}</div>
+                      <div class="badge-sub">${escapeHTML(cardItem.earnings)}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <div class="carousel-controls">
+              <button class="carousel-nav-btn prev-btn" data-action="prev-create-slide" aria-label="Previous slide">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              </button>
+
+              <div class="carousel-dots">
+                ${carouselCards.map((_, idx) => `
+                  <button class="carousel-dot ${idx === currentSlide ? 'active' : ''}" data-action="select-create-slide" data-slide="${idx}" aria-label="Go to slide ${idx + 1}"></button>
+                `).join('')}
+              </div>
+
+              <button class="carousel-nav-btn next-btn" data-action="next-create-slide" aria-label="Next slide">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="create-community-action-box">
+            <button class="create-community-primary-btn" data-action="start-community-flow">CREATE YOUR COMMUNITY</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  `;
 }
 
 function renderCommunityGrid() {
@@ -1024,9 +1100,10 @@ function bindAuth() {
 
 function render() {
   const app = document.querySelector('#app');
-  const body = state.view === 'discover' ? discoverView() : state.view === 'detail' ? detailView() : state.view === 'profile' ? profileView() : settingsView();
+  const body = state.view === 'discover' ? discoverView() : state.view === 'create-community' ? createCommunityView() : state.view === 'detail' ? detailView() : state.view === 'profile' ? profileView() : settingsView();
   app.innerHTML = `${header()}${body}<div class="toast" id="toast"></div>`;
   document.body.classList.toggle('theme-dark', state.themeMode === 'dark');
+  document.body.classList.toggle('page-pure-white', state.view === 'create-community');
   bind();
 }
 
@@ -1074,6 +1151,17 @@ function bind() {
       renderCommunityGrid();
     });
   });
+
+  const carouselDeck = document.querySelector('.community-carousel-deck');
+  if (carouselDeck) {
+    carouselDeck.querySelectorAll('.carousel-card-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const idx = Number(item.dataset.slideIndex || 0);
+        state.createSlideIndex = idx;
+        render();
+      });
+    });
+  }
 
   document.querySelector('[data-community]')?.parentElement.addEventListener('click', (event) => { const cardElement = event.target.closest('[data-community]'); if (cardElement && !event.target.closest('button')) { state.selected = Number(cardElement.dataset.community); state.view = 'detail'; render(); } });
   document.querySelector('#postForm')?.addEventListener('submit', (event) => { event.preventDefault(); const text = new FormData(event.target).get('text'); store.addPost({ communityId: state.selected, name: store.user.name, role: 'Member', text, time: 'now' }); render(); showToast('Post published'); });
@@ -1195,7 +1283,10 @@ function actions(action, element) {
     state.brandMenu = false;
     const bMenu = document.querySelector('#brandDropdownMenu');
     if (bMenu) bMenu.classList.remove('active');
-    showToast('Community creation is ready for your next step');
+    state.view = 'create-community';
+    render();
+  } else if (action === 'start-community-flow') {
+    showToast('Community creation flow initiated!');
   } else if (action === 'login' || action === 'register') {
     state.authMode = action;
     state.modal = 'auth';
@@ -1282,6 +1373,18 @@ function actions(action, element) {
       render();
       showToast(`Theme switched to ${state.themeMode} mode!`);
     }
+  } else if (action === 'prev-create-slide') {
+    const total = 5;
+    state.createSlideIndex = ((state.createSlideIndex || 0) - 1 + total) % total;
+    render();
+  } else if (action === 'next-create-slide') {
+    const total = 5;
+    state.createSlideIndex = ((state.createSlideIndex || 0) + 1) % total;
+    render();
+  } else if (action === 'select-create-slide') {
+    const slideIdx = Number(element?.dataset.slide || 0);
+    state.createSlideIndex = slideIdx;
+    render();
   } else if (action === 'select-media-thumb') {
     const thumbBtn = document.querySelector(`[data-action="select-media-thumb"][data-index="${element?.dataset.index}"]`);
     const idx = Number(element?.dataset.index || 0);
