@@ -2527,7 +2527,8 @@ body.theme-dark .topbar-search-form {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   padding: var(--space-lg);
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity;
 }
 
 @keyframes fadeIn {
@@ -2541,7 +2542,12 @@ body.theme-dark .topbar-search-form {
 }
 
 .modal-backdrop.is-closing {
-  animation: fadeOut 0.2s ease-in;
+  animation: fadeOut 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+.modal-backdrop.is-closing .login-modal-card {
+  animation: slideDown 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes fadeOut {
@@ -2563,7 +2569,8 @@ body.theme-dark .topbar-search-form {
   max-width: 420px;
   position: relative;
   box-shadow: var(--shadow-lg);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 @keyframes slideUp {
@@ -2575,6 +2582,18 @@ body.theme-dark .topbar-search-form {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
   }
 }
 

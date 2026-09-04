@@ -839,153 +839,187 @@ function settingsView() {
   `;
 }
 
-function modal() {
-  if (!state.modal) return '';
+function modalCardContent() {
   const mode = state.authMode;
-  if (mode === 'sent') return `<div class="modal-backdrop" data-action="close-modal"><section class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><button class="modal-close" data-action="close-modal">&times;</button><h2 class="login-modal-title">Please check your email</h2><p class="auth-copy" style="color:#d4d4d4; text-align:center;">We sent you an email, which contains a link to reset your SkillSpace password.</p><button class="SkillSpace-btn-primary" data-auth="login">BACK TO LOGIN</button></section></div>`;
+  if (mode === 'sent') return `<section class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><button class="modal-close" data-action="close-modal">&times;</button><h2 class="login-modal-title">Please check your email</h2><p class="auth-copy" style="color:#d4d4d4; text-align:center;">We sent you an email, which contains a link to reset your SkillSpace password.</p><button class="SkillSpace-btn-primary" data-auth="login">BACK TO LOGIN</button></section>`;
   const register = mode === 'register';
   const forgot = mode === 'forgot';
   const message = `<p class="auth-message ${state.authMessage ? state.authMessage.type : 'empty'}" aria-live="polite" style="margin-bottom:12px; text-align:center;">${state.authMessage ? escapeHTML(state.authMessage.text) : ''}</p>`;
   
   if (register) {
     return `
-      <div class="modal-backdrop" data-action="close-modal">
-        <div class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-          <button class="modal-close" data-action="close-modal">&times;</button>
-          <h2 class="login-modal-title">Create your SkillSpace account</h2>
-          ${message}
-          <form id="authForm">
-            <div class="settings-form-row-2">
-              <div class="skool-field-container">
-                <label class="skool-floating-label">First Name</label>
-                <input type="text" name="firstName" class="skool-input" required placeholder="">
-              </div>
-              <div class="skool-field-container">
-                <label class="skool-floating-label">Last Name</label>
-                <input type="text" name="lastName" class="skool-input" required placeholder="">
-              </div>
+      <div class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+        <button class="modal-close" data-action="close-modal">&times;</button>
+        <h2 class="login-modal-title">Create your SkillSpace account</h2>
+        ${message}
+        <form id="authForm">
+          <div class="settings-form-row-2">
+            <div class="skool-field-container">
+              <label class="skool-floating-label">First Name</label>
+              <input type="text" name="firstName" class="skool-input" required placeholder="">
             </div>
             <div class="skool-field-container">
-              <label class="skool-floating-label">Email</label>
-              <input type="email" name="email" class="skool-input" required placeholder="">
+              <label class="skool-floating-label">Last Name</label>
+              <input type="text" name="lastName" class="skool-input" required placeholder="">
             </div>
-            <div class="skool-field-container">
-              <label class="skool-floating-label">Password</label>
-              <input type="password" name="password" class="skool-input" minlength="8" required placeholder="">
-            </div>
-            <div class="skool-field-container">
-              <label class="skool-floating-label">Confirm Password</label>
-              <input type="password" name="confirmPassword" class="skool-input" minlength="8" required placeholder="">
-            </div>
-            <p class="terms" style="color:#858990; font-size:12px; margin-bottom:16px;">By signing up, you accept our <u style="color:#aaa">terms</u> and <u style="color:#aaa">privacy policy</u>.</p>
-            <button type="submit" class="SkillSpace-btn-primary">SIGN UP</button>
-            <div class="login-modal-footer">
-              Already have an account? <button type="button" class="SkillSpace-link" data-auth="login">Log in</button>
-            </div>
-          </form>
-        </div>
+          </div>
+          <div class="skool-field-container">
+            <label class="skool-floating-label">Email</label>
+            <input type="email" name="email" class="skool-input" required placeholder="">
+          </div>
+          <div class="skool-field-container">
+            <label class="skool-floating-label">Password</label>
+            <input type="password" name="password" class="skool-input" minlength="8" required placeholder="">
+          </div>
+          <div class="skool-field-container">
+            <label class="skool-floating-label">Confirm Password</label>
+            <input type="password" name="confirmPassword" class="skool-input" minlength="8" required placeholder="">
+          </div>
+          <p class="terms" style="color:#858990; font-size:12px; margin-bottom:16px;">By signing up, you accept our <u style="color:#aaa">terms</u> and <u style="color:#aaa">privacy policy</u>.</p>
+          <button type="submit" class="SkillSpace-btn-primary">SIGN UP</button>
+          <div class="login-modal-footer">
+            Already have an account? <button type="button" class="SkillSpace-link" data-auth="login">Log in</button>
+          </div>
+        </form>
       </div>
     `;
   }
 
   if (forgot) {
     return `
-      <div class="modal-backdrop" data-action="close-modal">
-        <div class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-          <button class="modal-close" data-action="close-modal">&times;</button>
-          <h2 class="login-modal-title">Forgot Password</h2>
-          ${message}
-          <p class="auth-copy" style="color:#d4d4d4; text-align:center; margin-bottom:18px;">Enter your email and we'll send you a link to reset your password.</p>
-          <form id="forgotForm">
-            <div class="skool-field-container">
-              <label class="skool-floating-label">Email</label>
-              <input name="email" type="email" class="skool-input" required placeholder="">
-            </div>
-            <button type="submit" class="SkillSpace-btn-primary" style="margin-top:12px;">EMAIL ME</button>
-            <div class="login-modal-footer">
-              <button type="button" class="SkillSpace-link" data-auth="login">Back to login</button>
-            </div>
-          </form>
-        </div>
+      <div class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+        <button class="modal-close" data-action="close-modal">&times;</button>
+        <h2 class="login-modal-title">Forgot Password</h2>
+        ${message}
+        <p class="auth-copy" style="color:#d4d4d4; text-align:center; margin-bottom:18px;">Enter your email and we'll send you a link to reset your password.</p>
+        <form id="forgotForm">
+          <div class="skool-field-container">
+            <label class="skool-floating-label">Email</label>
+            <input name="email" type="email" class="skool-input" required placeholder="">
+          </div>
+          <button type="submit" class="SkillSpace-btn-primary" style="margin-top:12px;">EMAIL ME</button>
+          <div class="login-modal-footer">
+            <button type="button" class="SkillSpace-link" data-auth="login">Back to login</button>
+          </div>
+        </form>
       </div>
     `;
   }
 
   return `
-    <div class="modal-backdrop" data-action="close-modal">
-      <div class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-        <button class="modal-close" data-action="close-modal">&times;</button>
-        <h2 class="login-modal-title">Log in to Skill Space</h2>
-        ${message}
-        <form id="authForm">
-          <div class="skool-field-container">
-            <label class="skool-floating-label">Email</label>
-            <input type="email" name="email" id="modalEmail" class="skool-input" required placeholder="">
-          </div>
-          <div class="skool-field-container">
-            <label class="skool-floating-label">Password</label>
-            <input type="password" name="password" id="modalPassword" class="skool-input" required placeholder="">
-          </div>
-          <div class="login-sublinks-row">
-            <button type="button" class="SkillSpace-link" data-auth="forgot">Forgot password?</button>
-            <button type="button" class="SkillSpace-link" data-auth="login">Log in with a code</button>
-          </div>
-          <button type="submit" class="SkillSpace-btn-primary">LOG IN</button>
-          <div class="login-modal-footer">
-            Don't have an account? <button type="button" class="SkillSpace-link" data-auth="register">Sign up for free</button>
-          </div>
-        </form>
-      </div>
+    <div class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+      <button class="modal-close" data-action="close-modal">&times;</button>
+      <h2 class="login-modal-title">Log in to Skill Space</h2>
+      ${message}
+      <form id="authForm">
+        <div class="skool-field-container">
+          <label class="skool-floating-label">Email</label>
+          <input type="email" name="email" id="modalEmail" class="skool-input" required placeholder="">
+        </div>
+        <div class="skool-field-container">
+          <label class="skool-floating-label">Password</label>
+          <input type="password" name="password" id="modalPassword" class="skool-input" required placeholder="">
+        </div>
+        <div class="login-sublinks-row">
+          <button type="button" class="SkillSpace-link" data-auth="forgot">Forgot password?</button>
+          <button type="button" class="SkillSpace-link" data-auth="login">Log in with a code</button>
+        </div>
+        <button type="submit" class="SkillSpace-btn-primary">LOG IN</button>
+        <div class="login-modal-footer">
+          Don't have an account? <button type="button" class="SkillSpace-link" data-auth="register">Sign up for free</button>
+        </div>
+      </form>
     </div>
   `;
 }
 
+function modal() {
+  if (!state.modal) return '';
+  return `<div class="modal-backdrop">${modalCardContent()}</div>`;
+}
+
 function mountAuthModal() {
   const app = document.querySelector('#app');
-  if (!app || document.querySelector('.modal-backdrop')) return;
+  if (!app) return;
+  const existingModal = document.querySelector('.modal-backdrop');
+  if (existingModal) {
+    if (existingModal.classList.contains('is-closing')) {
+      existingModal.remove();
+    } else {
+      existingModal.innerHTML = modalCardContent();
+      bindAuth();
+      return;
+    }
+  }
   app.insertAdjacentHTML('beforeend', modal());
   bindAuth();
 }
 
 function bindAuth() {
-  document.querySelectorAll('.modal-backdrop [data-auth]').forEach((element) => element.addEventListener('click', () => {
-    state.authMode = element.dataset.auth;
-    const currentModal = document.querySelector('.modal-backdrop');
-    if (currentModal) currentModal.outerHTML = modal();
-    bindAuth();
-  }));
-  document.querySelector('.modal-backdrop [data-action="close-modal"]')?.addEventListener('click', () => closeAuthModal());
-  document.querySelector('.modal-backdrop')?.addEventListener('click', (event) => { if (event.target === event.currentTarget) closeAuthModal(); });
-  document.querySelector('#forgotForm')?.addEventListener('submit', (event) => { event.preventDefault(); state.authMode = 'sent'; const currentModal = document.querySelector('.modal-backdrop'); if (currentModal) currentModal.outerHTML = modal(); bindAuth(); });
-  document.querySelector('#authForm')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    state.authMessage = '';
-    const data = Object.fromEntries(new FormData(event.target));
-    const email = data.email.trim().toLowerCase();
-    if (!email || !data.password || (state.authMode === 'register' && (!data.firstName?.trim() || !data.lastName?.trim() || !data.confirmPassword))) return setAuthMessage('All fields are required.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAuthMessage('Please enter a valid email address.');
-    if (data.password.length < 8) return setAuthMessage('Password must be at least 8 characters.');
-    if (state.authMode === 'register' && data.password !== data.confirmPassword) return setAuthMessage('Passwords do not match.');
-    const passwordHash = await hashPassword(data.password);
-    if (state.authMode === 'register') {
-      if (findAuthUser(email, passwordHash) || store.findUser(email)) return setAuthMessage('An account with this email already exists.');
-      const newUser = { id: crypto.randomUUID(), name: `${data.firstName.trim()} ${data.lastName.trim()}`, email, passwordHash, bio: 'Curious, learning in public.' };
-      store.saveUser(newUser);
-      state.authMode = 'login';
-      state.authMessage = { text: 'Account created successfully. Log in to continue.', type: 'success' };
-      const currentModal = document.querySelector('.modal-backdrop');
-      if (currentModal) currentModal.outerHTML = modal();
+  const backdrop = document.querySelector('.modal-backdrop');
+  if (!backdrop) return;
+
+  backdrop.querySelectorAll('[data-auth]').forEach((element) => {
+    element.onclick = (e) => {
+      e.stopPropagation();
+      state.authMode = element.dataset.auth;
+      state.authMessage = '';
+      backdrop.innerHTML = modalCardContent();
       bindAuth();
-      return;
-    }
-    const user = findAuthUser(email, passwordHash) || store.findUser(email);
-    if (!user || user.passwordHash !== passwordHash) return setAuthMessage('Invalid email or password.');
-    store.saveSession(user);
-    document.querySelector('.modal-backdrop')?.remove();
-    state.modal = null;
-    refreshHeader();
-    showToast('Welcome back');
+    };
   });
+
+  backdrop.querySelectorAll('[data-action="close-modal"]').forEach((element) => {
+    element.onclick = (e) => {
+      e.stopPropagation();
+      closeAuthModal();
+    };
+  });
+
+  backdrop.onclick = (event) => {
+    if (event.target === backdrop) closeAuthModal();
+  };
+
+  const forgotForm = document.querySelector('#forgotForm');
+  if (forgotForm) {
+    forgotForm.onsubmit = (event) => {
+      event.preventDefault();
+      state.authMode = 'sent';
+      backdrop.innerHTML = modalCardContent();
+      bindAuth();
+    };
+  }
+
+  const authForm = document.querySelector('#authForm');
+  if (authForm) {
+    authForm.onsubmit = async (event) => {
+      event.preventDefault();
+      state.authMessage = '';
+      const data = Object.fromEntries(new FormData(event.target));
+      const email = data.email.trim().toLowerCase();
+      if (!email || !data.password || (state.authMode === 'register' && (!data.firstName?.trim() || !data.lastName?.trim() || !data.confirmPassword))) return setAuthMessage('All fields are required.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAuthMessage('Please enter a valid email address.');
+      if (data.password.length < 8) return setAuthMessage('Password must be at least 8 characters.');
+      if (state.authMode === 'register' && data.password !== data.confirmPassword) return setAuthMessage('Passwords do not match.');
+      const passwordHash = await hashPassword(data.password);
+      if (state.authMode === 'register') {
+        if (findAuthUser(email, passwordHash) || store.findUser(email)) return setAuthMessage('An account with this email already exists.');
+        const newUser = { id: crypto.randomUUID(), name: `${data.firstName.trim()} ${data.lastName.trim()}`, email, passwordHash, bio: 'Curious, learning in public.' };
+        store.saveUser(newUser);
+        state.authMode = 'login';
+        state.authMessage = { text: 'Account created successfully. Log in to continue.', type: 'success' };
+        backdrop.innerHTML = modalCardContent();
+        bindAuth();
+        return;
+      }
+      const user = findAuthUser(email, passwordHash) || store.findUser(email);
+      if (!user || user.passwordHash !== passwordHash) return setAuthMessage('Invalid email or password.');
+      store.saveSession(user);
+      closeAuthModal();
+      refreshHeader();
+      showToast('Welcome back');
+    };
+  }
 }
 
 function render() {
@@ -999,14 +1033,23 @@ function render() {
 function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2400); }
 function closeAuthModal() {
   const backdrop = document.querySelector('.modal-backdrop');
-  if (!backdrop) { state.modal = null; render(); return; }
+  if (!backdrop) { state.modal = null; return; }
+  if (backdrop.classList.contains('is-closing')) return;
   backdrop.classList.add('is-closing');
-  setTimeout(() => { backdrop.remove(); state.modal = null; }, 220);
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (backdrop.parentNode) backdrop.remove();
+    state.modal = null;
+  };
+  backdrop.addEventListener('animationend', finish, { once: true });
+  setTimeout(finish, 240);
 }
 function refreshHeader() { const currentHeader = document.querySelector('.topbar-wrapper'); if (!currentHeader) return; currentHeader.outerHTML = header(); document.querySelectorAll('.topbar-wrapper [data-action]').forEach((element) => element.addEventListener('click', () => actions(element.dataset.action, element))); }
 async function hashPassword(password) { const bytes = new TextEncoder().encode(password); const digest = await crypto.subtle.digest('SHA-256', bytes); return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(''); }
 function findAuthUser(email, passwordHash) { return [...store.users, ...demoUsers].find((user) => user.email.toLowerCase() === email.toLowerCase() && user.passwordHash === passwordHash); }
-function setAuthMessage(text, type = 'error') { state.authMessage = { text, type }; const message = document.querySelector('.auth-message'); if (message) { message.textContent = text; message.className = `auth-message ${type}`; } else { const currentModal = document.querySelector('.modal-backdrop'); if (currentModal) currentModal.outerHTML = modal(); bindAuth(); } }
+function setAuthMessage(text, type = 'error') { state.authMessage = { text, type }; const message = document.querySelector('.auth-message'); if (message) { message.textContent = text; message.className = `auth-message ${type}`; } else { const backdrop = document.querySelector('.modal-backdrop'); if (backdrop) { backdrop.innerHTML = modalCardContent(); bindAuth(); } } }
 function restoreSession() { const session = store.session; if (!session?.token || !store.user || !session.expiresAt || Date.now() >= session.expiresAt) store.clearSession(); }
 
 function bind() {
