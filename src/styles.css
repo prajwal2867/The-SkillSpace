@@ -7,9 +7,11 @@
 /* Design Tokens */
 :root {
   /* Colors */
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-light: rgba(79, 70, 229, 0.1);
+  --primary: #3d5ba9;
+  --primary-hover: #30498c;
+  --primary-light: rgba(61, 91, 169, 0.1);
+  --pfp-background: rgb(35, 37, 43);
+  --visual-alert: rgb(203, 85, 62);
 
   --bg-primary: #fafafa;
   --bg-card: #ffffff;
@@ -214,7 +216,7 @@ body.theme-dark .topbar {
   position: absolute;
   top: -2px;
   right: -2px;
-  background: var(--primary);
+  background: var(--visual-alert);
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -227,7 +229,7 @@ body.theme-dark .topbar {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: var(--primary);
+  background: var(--pfp-background);
   color: white;
   display: flex;
   align-items: center;
@@ -1053,7 +1055,7 @@ body.theme-dark .topbar {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: var(--primary);
+  background: var(--pfp-background);
   color: white;
   display: flex;
   align-items: center;
@@ -1166,7 +1168,7 @@ body.theme-dark .topbar {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-full);
-  background: var(--primary);
+  background: var(--pfp-background);
   color: white;
   display: flex;
   align-items: center;
@@ -1403,7 +1405,7 @@ body.theme-dark .topbar {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary);
+  background: var(--pfp-background);
   color: white;
   font-weight: 700;
   font-size: 48px;
