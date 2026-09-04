@@ -105,6 +105,12 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+.skool-input:focus-visible,
+.skool-select:focus-visible,
+.skool-textarea:focus-visible {
+  outline: none;
+}
+
 /* ============================================
    Header / Topbar
    ============================================ */
@@ -2060,6 +2066,10 @@ body.theme-dark .topbar {
   margin-bottom: var(--space-md);
   padding: var(--space-sm);
   border-radius: var(--radius-md);
+}
+
+.auth-message.empty {
+  display: none;
 }
 
 .auth-message.error {
