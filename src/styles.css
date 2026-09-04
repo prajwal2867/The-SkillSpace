@@ -1940,18 +1940,21 @@ body.theme-dark .topbar-search-form {
   color: white;
   font-weight: 700;
   font-size: 48px;
+  border-radius: var(--radius-full);
 }
 
 .user-avatar-initial.medium {
   width: 56px;
   height: 56px;
   font-size: 22px;
+  border-radius: var(--radius-full);
 }
 
 .user-avatar-initial.large {
   width: 120px;
   height: 120px;
   font-size: 48px;
+  border-radius: var(--radius-full);
 }
 
 .bio-user-name {
