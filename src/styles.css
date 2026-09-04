@@ -1445,8 +1445,8 @@ body.theme-dark .topbar-search-form {
 .skool-join-button {
   width: 100%;
   height: 48px;
-  background: #f5c042;
-  color: #111827;
+  background: rgb(61, 91, 169);
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -1454,13 +1454,27 @@ body.theme-dark .topbar-search-form {
   letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 2px 4px rgba(245, 192, 66, 0.3);
+  box-shadow: 0 2px 4px rgba(61, 91, 169, 0.3);
 }
 
 .skool-join-button:hover {
-  background: #ebb02d;
+  background: rgb(50, 76, 143);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(245, 192, 66, 0.4);
+  box-shadow: 0 4px 8px rgba(61, 91, 169, 0.4);
+}
+
+.skool-join-button.joined {
+  background: rgba(61, 91, 169, 0.1);
+  color: rgb(61, 91, 169);
+  border: 1.5px solid rgb(61, 91, 169);
+  box-shadow: none;
+}
+
+.skool-join-button.joined:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+  box-shadow: none;
 }
 
 .sidebar-powered-by {

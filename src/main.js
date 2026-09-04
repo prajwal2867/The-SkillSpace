@@ -2,7 +2,7 @@ import './styles.css';
 import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 
-const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About' };
+const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [] };
 const icon = (name) => ({
   search: '⌕',
   bell: '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10Z"></path><path d="M10 21h4"></path></svg>',
@@ -96,7 +96,9 @@ function header() {
     </div>
   `;
 
-  const subTabs = isDetail ? `
+  const isJoined = activeComm ? (state.joinedCommunities || []).includes(activeComm.id) : false;
+
+  const subTabs = (isDetail && isJoined) ? `
     <div class="community-subnav-bar">
       <div class="subnav-container">
         ${['Community', 'Classroom', 'Calendar', 'Members', 'Map', 'Leaderboards', 'About'].map(tab => `
@@ -154,6 +156,7 @@ function renderCommunityGrid() {
 
 function detailView() {
   const community = communities.find((item) => item.id === state.selected) || communities[0];
+  const isJoined = (state.joinedCommunities || []).includes(community.id);
   const galleryImages = [
     community.cover,
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
@@ -311,7 +314,9 @@ function detailView() {
               </div>
 
               <!-- Prominent Join Group Button -->
-              <button class="skool-join-button" data-action="join">JOIN GROUP</button>
+              <button class="skool-join-button ${isJoined ? 'joined' : ''}" data-action="${isJoined ? 'leave' : 'join'}">
+                ${isJoined ? '✓ JOINED' : 'JOIN GROUP'}
+              </button>
 
               <div class="sidebar-powered-by">
                 Powered by <strong>skillspace</strong>
@@ -1196,7 +1201,21 @@ function actions(action, element) {
       state.authMode = 'login';
       state.modal = 'auth';
       mountAuthModal();
-    } else showToast('You are on the list');
+    } else {
+      const activeComm = communities.find(c => c.id === state.selected) || communities[0];
+      if (activeComm && !state.joinedCommunities.includes(activeComm.id)) {
+        state.joinedCommunities.push(activeComm.id);
+        showToast(`Joined ${activeComm.title}!`);
+        render();
+      }
+    }
+  } else if (action === 'leave') {
+    const activeComm = communities.find(c => c.id === state.selected) || communities[0];
+    if (activeComm) {
+      state.joinedCommunities = state.joinedCommunities.filter(id => id !== activeComm.id);
+      showToast(`Left ${activeComm.title}`);
+      render();
+    }
   } else if (action === 'notifications') {
     showToast(`${notifications.length} new notifications`);
   } else if (action === 'chats') {
