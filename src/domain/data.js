@@ -1,9 +1,12 @@
+import { dummyUsers } from '../../dummy_data.js';
+
 export const categories = ['Trending', 'Hobbies', 'Music', 'Money', 'Spirituality', 'Tech', 'Health', 'Sports', 'Self-improvement'];
+
+export { dummyUsers };
 
 export const demoUsers = [
   { id: 1, name: 'Prajwal Ramagiri', email: 'ramagiri.prajwal@gmail.com', passwordHash: '4ccb808c3e7309a9a7b14cd09d77e2049edeff88d1d433b160d8204adccdc613', username: 'prajwal-ramagiri-6593', bio: 'Curious, learning in public.', joinDate: '2026-08-15' },
-  { id: 2, name: 'Harsh Pillai', email: 'harsh_pillai34@example.com', passwordHash: 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', bio: 'Entrepreneur building SaaS products.' },
-  { id: 3, name: 'Krishna Mahajan', email: 'krishna_mahajan43@example.com', passwordHash: 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', bio: 'Software engineer by day, gamer by night.' }
+  ...dummyUsers
 ];
 
 export const communities = [
@@ -24,12 +27,12 @@ export const communities = [
     tag: 'Most active',
     rating: '5.0',
     reviewCount: 93,
-    creatorName: 'Jake Van Clief',
-    creatorTitle: 'AI Filmmaker & Researcher',
+    creatorName: 'Harsh Pillai',
+    creatorTitle: 'AI Filmmaker & SaaS Founder',
     creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
       'You relearn AI every time a model updates. The tools change. Your work resets. Build the structure underneath instead, and it lasts a decade.',
-      'What we give away for free beats most paid courses. Build durable AI systems with a Marine veteran and Edinburgh researcher. 40+ structured video modules and growing every month.',
+      'What we give away for free beats most paid courses. Build durable AI systems with a veteran Edinburgh researcher. 40+ structured video modules and growing every month.',
       'Our curriculum covers high-yield generative techniques: folder architecture that turns raw prompts into reproducible systems, prompt frameworks you reuse across video tools, computing fundamentals most creators skip, and practical AI video rendering built to survive every framework shift.'
     ],
     highlights: [
@@ -40,10 +43,10 @@ export const communities = [
       'The foundational thinking that survives every model update'
     ],
     reviews: [
-      { author: 'Christina Wanzer', rating: 5, time: '18h ago', status: 'Still a paying member after 3 months', text: 'I completed Navigating the course. I created my github repo account, synced VS Code with my pipeline and established full automated video rendering via API!' },
-      { author: 'Ruby Sparks', rating: 5, time: '1d ago', status: 'Still a paying member after 5 months', text: 'Fantastic group and clear, easy learning. Would rate 6 stars if I could!' },
-      { author: 'Pedro Costa', rating: 5, time: '2d ago', status: 'Still a paying member after 2 months', text: 'The depth of knowledge in this bootcamp is unmatched. The prompt templates alone saved me 40 hours this month.' },
-      { author: 'Yannick Schirmer', rating: 5, time: '4d ago', status: 'Still a paying member after 3 months', text: 'Worth every single penny. The community feedback on my first AI film commercial helped me land my first paid client.' }
+      { author: 'Simran Iyer', rating: 5, time: '18h ago', status: 'Still a paying member after 3 months', text: 'I completed Navigating the course. I created my github repo account, synced VS Code with my pipeline and established full automated video rendering via API!' },
+      { author: 'Varun Patil', rating: 5, time: '1d ago', status: 'Still a paying member after 5 months', text: 'Fantastic group and clear, easy learning. Would rate 6 stars if I could!' },
+      { author: 'Nitin Goyal', rating: 5, time: '2d ago', status: 'Still a paying member after 2 months', text: 'The depth of knowledge in this bootcamp is unmatched. The prompt templates alone saved me 40 hours this month.' },
+      { author: 'Ananya Mishra', rating: 5, time: '4d ago', status: 'Still a paying member after 3 months', text: 'Worth every single penny. The community feedback on my first AI film commercial helped me land my first paid client.' }
     ]
   },
   {
@@ -63,7 +66,7 @@ export const communities = [
     tag: 'New energy',
     rating: '4.9',
     reviewCount: 64,
-    creatorName: 'Marcus Vance',
+    creatorName: 'Krishna Mahajan',
     creatorTitle: 'Short-Form Content Strategist',
     creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
@@ -78,8 +81,8 @@ export const communities = [
       'Weekly live community feedback on your draft edits before posting'
     ],
     reviews: [
-      { author: 'Sarah Jenkins', rating: 5, time: '2d ago', status: 'Member for 4 months', text: 'My retention graph tripled after applying the pacing framework from Module 2. Absolutely game-changing.' },
-      { author: 'David K.', rating: 5, time: '5d ago', status: 'Member for 1 month', text: 'The community feedback channel is worth 10x the monthly price. Instant answers to editing bottlenecks.' }
+      { author: 'Saanvi Deshmukh', rating: 5, time: '2d ago', status: 'Member for 4 months', text: 'My retention graph tripled after applying the pacing framework from Module 2. Absolutely game-changing.' },
+      { author: 'Rohan Reddy', rating: 5, time: '5d ago', status: 'Member for 1 month', text: 'The community feedback channel is worth 10x the monthly price. Instant answers to editing bottlenecks.' }
     ]
   },
   {
@@ -99,8 +102,8 @@ export const communities = [
     tag: 'Private room',
     rating: '5.0',
     reviewCount: 42,
-    creatorName: 'Elena Rostova',
-    creatorTitle: 'Generative Art Director',
+    creatorName: 'Ananya Mishra',
+    creatorTitle: 'Generative Art Director & UI/UX Designer',
     creatorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
       'Bridge the gap between synthetic plastic renders and photorealistic digital art. Master camera lighting, aperture controls, texture depth, and noise injection.',
@@ -114,8 +117,8 @@ export const communities = [
       'Direct critique from studio instructors on image compositions'
     ],
     reviews: [
-      { author: 'Liam Gallagher', rating: 5, time: '1d ago', status: 'Active member', text: 'The lighting cheat sheets transformed my render quality overnight. No more plastic look!' },
-      { author: 'Amara Chen', rating: 5, time: '3d ago', status: 'Member for 6 months', text: 'Best photorealism community online. The ComfyUI workflows are pure gold.' }
+      { author: 'Vikram Bhatt', rating: 5, time: '1d ago', status: 'Active member', text: 'The lighting cheat sheets transformed my render quality overnight. No more plastic look!' },
+      { author: 'Riya Pillai', rating: 5, time: '3d ago', status: 'Member for 6 months', text: 'Best photorealism community online. The ComfyUI workflows are pure gold.' }
     ]
   },
   {
@@ -135,8 +138,8 @@ export const communities = [
     tag: 'Top community',
     rating: '4.9',
     reviewCount: 412,
-    creatorName: 'Liam Ottley',
-    creatorTitle: 'AI Agency Founder',
+    creatorName: 'Varun Patil',
+    creatorTitle: 'AI Agency Lead & Full-Stack Developer',
     creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
       'The largest community of AI automation operators on the web. Learn how to design, package, and deploy Make, n8n, and custom LLM workflows for commercial clients.',
@@ -150,14 +153,14 @@ export const communities = [
       'Daily peer support and live technical troubleshooting channels'
     ],
     reviews: [
-      { author: 'Chad Richardson', rating: 5, time: '11d ago', status: 'Paying member after 8 months', text: 'Closed my first $3,500 retainer using the proposal template from section 4. This group pays for itself 500x over.' },
-      { author: 'Siddharth Patel', rating: 5, time: '12d ago', status: 'Paying member after 1 year', text: 'The community standard for AI agency owners. Continuous value every single week.' }
+      { author: 'Sneha Kapoor', rating: 5, time: '11d ago', status: 'Paying member after 8 months', text: 'Closed my first $3,500 retainer using the proposal template from section 4. This group pays for itself 500x over.' },
+      { author: 'Aarav Malhotra', rating: 5, time: '12d ago', status: 'Paying member after 1 year', text: 'The community standard for AI agency owners. Continuous value every single week.' }
     ]
   },
   {
     id: 5,
-    title: 'Grow With Evelyn',
-    slug: 'growwithevelyn',
+    title: 'Grow With Simran',
+    slug: 'growwithsimran',
     description: 'Build an online education business that sells.',
     members: '3.8k',
     onlineCount: '142',
@@ -171,8 +174,8 @@ export const communities = [
     tag: 'Free to join',
     rating: '5.0',
     reviewCount: 88,
-    creatorName: 'Evelyn James',
-    creatorTitle: 'Course Creator & Educator',
+    creatorName: 'Simran Iyer',
+    creatorTitle: 'Course Creator & Tech Educator',
     creatorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
       'Turn your specialized knowledge into a thriving, community-driven online learning experience. Learn audience building, curriculum structure, and ethical sales.',
@@ -186,8 +189,8 @@ export const communities = [
       'Free weekly office hours and live community coaching calls'
     ],
     reviews: [
-      { author: 'Maria Santos', rating: 5, time: '3d ago', status: 'Free community member', text: 'Evelyn explains curriculum design better than any $2,000 masterclass I have taken!' },
-      { author: 'Tom H.', rating: 5, time: '1w ago', status: 'Free community member', text: 'Warm, highly supportive atmosphere with incredibly practical guidance.' }
+      { author: 'Aditi Joshi', rating: 5, time: '3d ago', status: 'Free community member', text: 'Simran explains curriculum design better than any $2,000 masterclass I have taken!' },
+      { author: 'Kabir Tandon', rating: 5, time: '1w ago', status: 'Free community member', text: 'Warm, highly supportive atmosphere with incredibly practical guidance.' }
     ]
   },
   {
@@ -207,7 +210,7 @@ export const communities = [
     tag: 'Small cohort',
     rating: '4.8',
     reviewCount: 31,
-    creatorName: 'Chloe Bennett',
+    creatorName: 'Riya Pillai',
     creatorTitle: 'Full-Time UGC Creator',
     creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
@@ -222,7 +225,7 @@ export const communities = [
       'Daily pitch counter leaderboard and accountability tracking'
     ],
     reviews: [
-      { author: 'Nati Peek', rating: 5, time: '7d ago', status: 'Sprint participant', text: 'I love every process and how engaging it is! Booked 2 brand deals in my first 3 weeks.' }
+      { author: 'Ishaan Chatterjee', rating: 5, time: '7d ago', status: 'Sprint participant', text: 'I love every process and how engaging it is! Booked 2 brand deals in my first 3 weeks.' }
     ]
   },
   {
@@ -242,7 +245,7 @@ export const communities = [
     tag: 'Low cost',
     rating: '4.9',
     reviewCount: 78,
-    creatorName: 'Cameron England',
+    creatorName: 'Nitin Goyal',
     creatorTitle: 'Media Buyer & Growth Lead',
     creatorAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
@@ -257,7 +260,7 @@ export const communities = [
       'Direct troubleshooting for ad account bans and tracking errors'
     ],
     reviews: [
-      { author: 'Leo Saraiva', rating: 5, time: '5d ago', status: 'Paying member', text: 'Always learning, thank you all. Reduced our cost per acquisition by 34%.' }
+      { author: 'Pooja Kulkarni', rating: 5, time: '5d ago', status: 'Paying member', text: 'Always learning, thank you all. Reduced our cost per acquisition by 34%.' }
     ]
   },
   {
@@ -277,7 +280,7 @@ export const communities = [
     tag: 'Fresh start',
     rating: '5.0',
     reviewCount: 19,
-    creatorName: 'Arthur Pendelton',
+    creatorName: 'Yash Mishra',
     creatorTitle: 'Writer & Digital Creator',
     creatorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
@@ -292,7 +295,7 @@ export const communities = [
       'Safe, welcoming environment built on mutual encouragement'
     ],
     reviews: [
-      { author: 'Eleanor Vance', rating: 5, time: '1w ago', status: 'Member', text: 'The kindest group on the internet. Finally launched my Substack at age 62!' }
+      { author: 'Kavya Nair', rating: 5, time: '1w ago', status: 'Member', text: 'The kindest group on the internet. Finally launched my Substack with support!' }
     ]
   },
   {
@@ -312,8 +315,8 @@ export const communities = [
     tag: 'Deep dive',
     rating: '4.8',
     reviewCount: 52,
-    creatorName: 'Zach Ginn',
-    creatorTitle: 'Faceless Media Publisher',
+    creatorName: 'Vikram Bhatt',
+    creatorTitle: 'Faceless Media Publisher & Marketer',
     creatorAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
       'Master theme page monetization, automated viral reel creation, and affiliate digital product sales without showing your face.',
@@ -327,7 +330,7 @@ export const communities = [
       'Private mastermind chat channel for theme page owners'
     ],
     reviews: [
-      { author: 'Sameera Leola', rating: 5, time: '4d ago', status: 'Paying member', text: 'If you are wondering if the 5 star reviews are just to be nice - they are not. The content here is revolutionary.' }
+      { author: 'Aditya Singh', rating: 5, time: '4d ago', status: 'Paying member', text: 'If you are wondering if the 5 star reviews are just to be nice - they are not. The content here is revolutionary.' }
     ]
   },
   {
@@ -347,8 +350,8 @@ export const communities = [
     tag: 'Open room',
     rating: '4.9',
     reviewCount: 110,
-    creatorName: 'Maya Chen',
-    creatorTitle: 'Community Host',
+    creatorName: 'Saanvi Deshmukh',
+    creatorTitle: 'Community Host & Designer',
     creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
       'A vibrant open lounge for digital creators across video, writing, podcasting, and design. Find co-founders, feedback partners, and cross-promotion opportunities.',
@@ -362,7 +365,7 @@ export const communities = [
       'Resource sharing channels with free creator assets'
     ],
     reviews: [
-      { author: 'Clemens Schulz', rating: 5, time: '10d ago', status: 'Free member', text: 'Found my podcast co-host here within two days. Incredible group of active builders.' }
+      { author: 'Shaurya Bhatia', rating: 5, time: '10d ago', status: 'Free member', text: 'Found my podcast co-host here within two days. Incredible group of active builders.' }
     ]
   },
   {
@@ -382,7 +385,7 @@ export const communities = [
     tag: 'Builder-led',
     rating: '4.9',
     reviewCount: 67,
-    creatorName: 'Arjun Patel',
+    creatorName: 'Rohan Reddy',
     creatorTitle: 'Smart Contract Architect',
     creatorAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
@@ -397,7 +400,7 @@ export const communities = [
       'Job board with direct access to Web3 hiring founders'
     ],
     reviews: [
-      { author: 'Kenji Sato', rating: 5, time: '2w ago', status: 'Paying member', text: 'The security audit module saved our protocol from a critical reentrancy bug during testnet.' }
+      { author: 'Kabir Tandon', rating: 5, time: '2w ago', status: 'Paying member', text: 'The security audit module saved our protocol from a critical reentrancy bug during testnet.' }
     ]
   },
   {
@@ -417,8 +420,8 @@ export const communities = [
     tag: 'Free to join',
     rating: '5.0',
     reviewCount: 154,
-    creatorName: 'Coach Jordan Smith',
-    creatorTitle: 'CSCS & Performance Coach',
+    creatorName: 'Aarav Malhotra',
+    creatorTitle: 'Health & Performance Coach',
     creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
     aboutParagraphs: [
       'Sustainable fitness, science-backed nutrition, and everyday accountability. No extreme starvation diets or unsustainable 2-hour workout regimes.',
@@ -432,19 +435,19 @@ export const communities = [
       'Daily motivation and progress photo accountability'
     ],
     reviews: [
-      { author: 'Laura Martinez', rating: 5, time: '3d ago', status: 'Community member', text: 'Down 15 lbs in 3 months without feeling deprived. The meal prep guides are delicious!' }
+      { author: 'Aditi Joshi', rating: 5, time: '3d ago', status: 'Community member', text: 'Down 15 lbs in 3 months without feeling deprived. The meal prep guides are delicious!' }
     ]
   }
 ];
 
 export const notifications = [
-  { user: 'Cameron England', text: 'posted a new announcement', time: '9h', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-  { user: 'Liam Ottley', text: 'shared a new lesson', time: '12h', avatar: 'https://randomuser.me/api/portraits/men/44.jpg' },
-  { user: 'Zach Ginn', text: 'went live with a new workshop', time: '21h', avatar: 'https://randomuser.me/api/portraits/men/22.jpg' }
+  { user: 'Harsh Pillai', text: 'posted a new announcement', time: '9h', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
+  { user: 'Varun Patil', text: 'shared a new lesson', time: '12h', avatar: 'https://randomuser.me/api/portraits/men/44.jpg' },
+  { user: 'Vikram Bhatt', text: 'went live with a new workshop', time: '21h', avatar: 'https://randomuser.me/api/portraits/men/22.jpg' }
 ];
 
 export const chats = [
-  { user: 'Antonia Okeke', text: 'Welcome to Excel Mastery! Check step one.', time: '1h', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-  { user: 'Andrew Naegele', text: 'That is all you have left before launch.', time: 'Oct 25', avatar: 'https://randomuser.me/api/portraits/men/45.jpg' },
-  { user: 'Lenny Bartholäus', text: 'It is impressive you are developing AI models.', time: 'Feb 25', avatar: 'https://randomuser.me/api/portraits/men/62.jpg' }
+  { user: 'Simran Iyer', text: 'Welcome to Excel Mastery! Check step one.', time: '1h', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
+  { user: 'Nitin Goyal', text: 'That is all you have left before launch.', time: 'Oct 25', avatar: 'https://randomuser.me/api/portraits/men/45.jpg' },
+  { user: 'Rohan Reddy', text: 'It is impressive you are developing AI models.', time: 'Feb 25', avatar: 'https://randomuser.me/api/portraits/men/62.jpg' }
 ];

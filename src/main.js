@@ -2,7 +2,7 @@ import './styles.css';
 import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 
-const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [] };
+const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [] };
 const icon = (name) => ({
   search: '⌕',
   bell: '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10Z"></path><path d="M10 21h4"></path></svg>',
@@ -49,8 +49,15 @@ function header() {
   </div>
   ` : '';
 
+  const backButton = isDetail ? `
+    <button class="topbar-back-btn" data-action="discover" title="Go back to Home" aria-label="Go back to home page">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+  ` : '';
+
   const brandArea = `
     <div class="brand-container" id="brandContainer">
+      ${backButton}
       ${isDetail && activeComm ? `
         <div class="community-header-brand" data-action="toggle-brand-menu">
           <img src="${activeComm.creatorAvatar || activeComm.cover}" class="community-brand-icon" alt="">
@@ -135,7 +142,7 @@ function header() {
 }
 
 function card(community, index) {
-  return `<article class="community-card" style="--accent:${community.accent};--delay:${index * 45}ms" data-community="${community.id}"><div class="card-image"><img src="${community.cover}" alt="${escapeHTML(community.title)} cover"><span class="card-tag">${community.tag}</span><button class="save-button" aria-label="Save ${escapeHTML(community.title)}">☆</button></div><div class="card-body"><div class="eyebrow">${community.category} <span>·</span> ${community.accessType === 'Private' ? icon('lock') + ' Private' : 'Open access'}</div><h2>${escapeHTML(community.title)}</h2><p>${escapeHTML(community.description)}</p><footer><span><strong>${community.members}</strong> members</span><span class="price">${community.price}</span></footer></div></article>`;
+  return `<article class="community-card" style="--accent:${community.accent};--delay:${index * 45}ms" data-community="${community.id}"><div class="card-image"><img src="${community.cover}" alt="${escapeHTML(community.title)} cover"><span class="card-tag">${community.tag}</span></div><div class="card-body"><div class="eyebrow">${community.category} <span>·</span> ${community.accessType === 'Private' ? icon('lock') + ' Private' : 'Open access'}</div><h2>${escapeHTML(community.title)}</h2><p>${escapeHTML(community.description)}</p><footer><span><strong>${community.members}</strong> members</span><span class="price">${community.price}</span></footer></div></article>`;
 }
 
 function discoverView() {
@@ -143,7 +150,7 @@ function discoverView() {
   const resultHeading = state.submittedQuery ? `<div class="result-heading"><span>${results.length} results for <strong>"${escapeHTML(state.submittedQuery)}"</strong></span><button class="filter-button" data-action="filters">Filter ${icon('plus')}</button></div>` : '';
   const hasActiveFilters = state.price !== 'All' || state.access !== 'All' || state.sort !== 'Trending';
 
-  return `<main class="discover-page"><section class="intro"><div><p class="kicker">A better place to belong</p><h1>Discover communities</h1><p class="intro-copy">or <button class="inline-create" data-action="create">create your own</button></p></div></section><section class="catalog-toolbar"><div class="searchbox">${icon('search')}<input id="search" value="${escapeHTML(state.query)}" placeholder="Search communities, topics, people..." aria-label="Search communities"></div><div class="filter-row">${categories.map((category) => `<button class="chip ${state.category === category ? 'selected' : ''}" data-category="${category}">${category}</button>`).join('')}<div class="filter-dropdown-container" id="filterDropdownContainer"><button class="chip filter-dropdown-btn" data-action="toggle-filter-menu" style="border-color:${hasActiveFilters ? 'rgb(61, 91, 169)' : 'inherit'}; font-weight:${hasActiveFilters ? '700' : 'normal'}">Filter <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></button><div class="filter-menu-popup" id="filterPopup"><div class="filter-grid"><div class="filter-column"><div class="filter-header">Price</div><label class="filter-radio-label"><input type="radio" name="priceFilter" value="All" class="custom-radio" ${state.price === 'All' ? 'checked' : ''} data-filter-type="price"><span>All</span></label><label class="filter-radio-label"><input type="radio" name="priceFilter" value="Free" class="custom-radio" ${state.price === 'Free' ? 'checked' : ''} data-filter-type="price"><span>Free</span></label><label class="filter-radio-label"><input type="radio" name="priceFilter" value="Paid" class="custom-radio" ${state.price === 'Paid' ? 'checked' : ''} data-filter-type="price"><span>Paid</span></label></div><div class="filter-column"><div class="filter-header">Type</div><label class="filter-radio-label"><input type="radio" name="accessFilter" value="All" class="custom-radio" ${state.access === 'All' ? 'checked' : ''} data-filter-type="access"><span>All</span></label><label class="filter-radio-label"><input type="radio" name="accessFilter" value="Private" class="custom-radio" ${state.access === 'Private' ? 'checked' : ''} data-filter-type="access"><span>Private</span></label><label class="filter-radio-label"><input type="radio" name="accessFilter" value="Public" class="custom-radio" ${state.access === 'Public' ? 'checked' : ''} data-filter-type="access"><span>Public</span></label></div><div class="filter-column"><div class="filter-header">Sort</div><label class="filter-radio-label"><input type="radio" name="sortFilter" value="Trending" class="custom-radio" ${state.sort === 'Trending' ? 'checked' : ''} data-filter-type="sort"><span>Trending</span></label><label class="filter-radio-label"><input type="radio" name="sortFilter" value="Top" class="custom-radio" ${state.sort === 'Top' ? 'checked' : ''} data-filter-type="sort"><span>Top</span></label></div></div><div class="filter-footer"><span style="color:#858990; margin-right:6px;">Language</span> English<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px;"><polyline points="6 9 12 15 18 9"></polyline></svg></div></div></div></div></section>${resultHeading}<section class="catalog-heading"><div><p class="kicker">Curated for you</p><h2>Communities worth your time <span>${results.length}</span></h2></div><p class="catalog-note">Updated weekly · <b>12,480</b> active members</p></section><div class="community-grid">${results.length ? results.map(card).join('') : `<div class="empty"><strong>No communities found.</strong><p>Try a broader search or reset your filters.</p><button class="outline-button" data-action="reset">Reset filters</button></div>`}</div></main>`;
+  return `<main class="discover-page"><section class="intro"><div><p class="kicker">A better place to belong</p><h1>Discover communities</h1><p class="intro-copy">or <button class="inline-create" data-action="create">create your own</button></p></div></section><section class="catalog-toolbar"><div class="searchbox">${icon('search')}<input id="search" value="${escapeHTML(state.query)}" placeholder="Search communities, topics, people..." aria-label="Search communities"></div><div class="filter-row">${categories.map((category) => `<button class="chip ${state.category === category ? 'selected' : ''}" data-category="${category}">${category}</button>`).join('')}<div class="filter-dropdown-container" id="filterDropdownContainer"><button class="chip filter-dropdown-btn" data-action="toggle-filter-menu" style="border-color:${hasActiveFilters ? 'rgb(61, 91, 169)' : 'inherit'}; font-weight:${hasActiveFilters ? '700' : 'normal'}">Filter <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></button><div class="filter-menu-popup ${state.filterMenu ? 'active' : ''}" id="filterPopup"><div class="filter-grid"><div class="filter-column"><div class="filter-header">Price</div><label class="filter-radio-label"><input type="radio" name="priceFilter" value="All" class="custom-radio" ${state.price === 'All' ? 'checked' : ''} data-filter-type="price"><span>All</span></label><label class="filter-radio-label"><input type="radio" name="priceFilter" value="Free" class="custom-radio" ${state.price === 'Free' ? 'checked' : ''} data-filter-type="price"><span>Free</span></label><label class="filter-radio-label"><input type="radio" name="priceFilter" value="Paid" class="custom-radio" ${state.price === 'Paid' ? 'checked' : ''} data-filter-type="price"><span>Paid</span></label></div><div class="filter-column"><div class="filter-header">Type</div><label class="filter-radio-label"><input type="radio" name="accessFilter" value="All" class="custom-radio" ${state.access === 'All' ? 'checked' : ''} data-filter-type="access"><span>All</span></label><label class="filter-radio-label"><input type="radio" name="accessFilter" value="Private" class="custom-radio" ${state.access === 'Private' ? 'checked' : ''} data-filter-type="access"><span>Private</span></label><label class="filter-radio-label"><input type="radio" name="accessFilter" value="Public" class="custom-radio" ${state.access === 'Public' ? 'checked' : ''} data-filter-type="access"><span>Public</span></label></div><div class="filter-column"><div class="filter-header">Sort</div><label class="filter-radio-label"><input type="radio" name="sortFilter" value="Trending" class="custom-radio" ${state.sort === 'Trending' ? 'checked' : ''} data-filter-type="sort"><span>Trending</span></label><label class="filter-radio-label"><input type="radio" name="sortFilter" value="Top" class="custom-radio" ${state.sort === 'Top' ? 'checked' : ''} data-filter-type="sort"><span>Top</span></label></div></div><div class="filter-footer"><span style="color:#858990; margin-right:6px;">Language</span> English<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px;"><polyline points="6 9 12 15 18 9"></polyline></svg></div></div></div></div></section>${resultHeading}<section class="catalog-heading"><div><p class="kicker">Curated for you</p><h2>Communities worth your time <span>${results.length}</span></h2></div><p class="catalog-note">Updated weekly · <b>12,480</b> active members</p></section><div class="community-grid">${results.length ? results.map(card).join('') : `<div class="empty"><strong>No communities found.</strong><p>Try a broader search or reset your filters.</p><button class="outline-button" data-action="reset">Reset filters</button></div>`}</div></main>`;
 }
 
 function createCommunityView() {
@@ -1250,6 +1257,7 @@ document.addEventListener('click', (event) => {
   const filterContainer = document.querySelector('#filterDropdownContainer');
   if (filterPopup && filterContainer && !filterContainer.contains(event.target)) {
     filterPopup.classList.remove('active');
+    state.filterMenu = false;
   }
 });
 
@@ -1258,6 +1266,7 @@ function actions(action, element) {
     state.view = 'discover';
     state.profileMenu = false;
     state.brandMenu = false;
+    state.filterMenu = false;
     const bMenu = document.querySelector('#brandDropdownMenu');
     if (bMenu) bMenu.classList.remove('active');
     if (action === 'reset') {
@@ -1281,6 +1290,7 @@ function actions(action, element) {
   } else if (action === 'create') {
     state.profileMenu = false;
     state.brandMenu = false;
+    state.filterMenu = false;
     const bMenu = document.querySelector('#brandDropdownMenu');
     if (bMenu) bMenu.classList.remove('active');
     state.view = 'create-community';
@@ -1308,7 +1318,8 @@ function actions(action, element) {
   } else if (action === 'toggle-filter-menu') {
     const popup = document.querySelector('#filterPopup');
     if (popup) {
-      popup.classList.toggle('active');
+      state.filterMenu = !state.filterMenu;
+      popup.classList.toggle('active', state.filterMenu);
     }
   } else if (action === 'profile-page') {
     const menu = document.querySelector('#userProfileMenu');

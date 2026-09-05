@@ -1253,3 +1253,6 @@ const dummyCourses = [
 window.dummyUsers = dummyUsers;
 window.dummyPosts = dummyPosts;
 window.dummyCourses = dummyCourses;
+
+export { dummyUsers, dummyPosts, dummyCourses };
+
