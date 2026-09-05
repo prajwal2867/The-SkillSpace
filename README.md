@@ -1,14 +1,5 @@
 # SkillSpace
 
-**SkillSpace** is a modern, feature-rich web platform prototype designed for creators, educators, entrepreneurs, and learners to build, discover, and grow vibrant online communities. 
-
-Built with clean Vanilla JavaScript, standard modular architecture, and a curated design system, SkillSpace offers a sleek user experience comparable to top community platforms like Skool and Circle.
-
-
----
-
-## What Is This All About?
-
 SkillSpace is an all-in-one online platform designed for creators, coaches, and educators to host community discussions, online courses, and event calendars in a single location.
 
 ### Core Mission & Purpose
@@ -131,8 +122,3 @@ npm run preview
 
 Contributions, issues, and feature requests are welcome! Feel free to check out the issues page if you want to contribute.
 
----
-
-## License
-
-This project is open-source and available under the [MIT License](LICENSE).
