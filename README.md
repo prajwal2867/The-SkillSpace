@@ -9,7 +9,7 @@ Built with clean Vanilla JavaScript, standard modular architecture, and a curate
 
 ## What Is This All About?
 
-SkillSpace is built to demonstrate how a modern, unified community-building and online education platform operates. It addresses the growing need for creators to bring community discussions, video courses, member leaderboards, and peer feedback together into one single hub—without needing bloated frameworks or complex server architectures.
+SkillSpace is an all-in-one online platform designed for creators, coaches, and educators to host community discussions, online courses, and event calendars in a single location.
 
 ### Core Mission & Purpose
 
