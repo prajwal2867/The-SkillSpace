@@ -86,7 +86,7 @@ Make sure you have **Node.js** (v16 or higher) and **npm** installed on your sys
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/The-SkillSpace.git
+   https://github.com/prajwal2867/The-SkillSpace.git
    cd The-SkillSpace
    ```
 
@@ -102,19 +102,6 @@ Start the local development server with instant HMR (Hot Module Replacement):
 npm run dev
 ```
 Open your browser and navigate to `http://localhost:5173`.
-
-### Production Build
-
-To build the static production bundle:
-```bash
-npm run build
-```
-The optimized production files will be output to the `dist/` directory.
-
-To preview the production build locally:
-```bash
-npm run preview
-```
 
 ---
 
