@@ -1451,15 +1451,12 @@ function actions(action, element) {
     state.query = '';
     state.submittedQuery = '';
     render();
-  } else if (action === 'create') {
+  } else if (action === 'create' || action === 'start-community-flow') {
     state.profileMenu = false;
     state.brandMenu = false;
     state.filterMenu = false;
     const bMenu = document.querySelector('#brandDropdownMenu');
     if (bMenu) bMenu.classList.remove('active');
-    state.view = 'create-community';
-    render();
-  } else if (action === 'start-community-flow') {
     state.view = 'select-plan';
     render();
   } else if (action === 'toggle-plan-billing') {
