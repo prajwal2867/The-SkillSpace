@@ -1210,7 +1210,7 @@ function bindAuth() {
       e.stopPropagation();
       const planName = element.dataset.plan || 'Pro';
       closeAuthModal();
-      showToast(`🎉 Selected ${planName} plan! Setting up your community...`);
+      showToast(`Selected ${planName} plan! Setting up your community...`);
     };
   });
 
@@ -1458,7 +1458,7 @@ function actions(action, element) {
     render();
   } else if (action === 'select-plan') {
     const selectedPlan = element?.dataset.plan || 'Pro';
-    showToast(`🎉 Selected ${selectedPlan} plan! Setting up your community...`);
+    showToast(`Selected ${selectedPlan} plan! Setting up your community...`);
   } else if (action === 'login' || action === 'register') {
     state.authMode = action;
     state.modal = 'auth';
