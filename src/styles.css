@@ -3227,4 +3227,287 @@ body.theme-dark .carousel-dot {
   .create-community-subtitle {
     font-size: 18px;
   }
+}
+
+/* ==========================================================================
+   Plan Selection Modal Styles
+   ========================================================================== */
+.plan-modal-card {
+  background-color: var(--bg-card, #ffffff);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 780px;
+  padding: 40px 36px 36px;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+  animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+body.theme-dark .plan-modal-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+}
+
+.plan-modal-title {
+  font-size: 34px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-primary, #111827);
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+body.theme-dark .plan-modal-title {
+  color: #f8fafc;
+}
+
+.plan-toggle-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.plan-toggle-container {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e5e7eb;
+  padding: 4px;
+  border-radius: 9999px;
+  position: relative;
+}
+
+body.theme-dark .plan-toggle-container {
+  background-color: #334155;
+}
+
+.plan-toggle-btn {
+  padding: 8px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary, #4b5563);
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+body.theme-dark .plan-toggle-btn {
+  color: #cbd5e1;
+}
+
+.plan-toggle-btn.active {
+  background-color: #ffffff;
+  color: var(--text-primary, #111827);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-weight: 700;
+}
+
+body.theme-dark .plan-toggle-btn.active {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.plan-toggle-yearly-box {
+  position: relative;
+  display: inline-flex;
+}
+
+.plan-free-badge {
+  position: absolute;
+  top: -18px;
+  right: 12px;
+  background-color: #2e7d32;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3);
+  pointer-events: none;
+}
+
+.plan-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.plan-card {
+  background-color: #ffffff;
+  border: 1.5px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-dark .plan-card {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.plan-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.plan-card-name {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary, #111827);
+  display: inline;
+}
+
+body.theme-dark .plan-card-name {
+  color: #f8fafc;
+}
+
+.plan-card-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  display: inline;
+  margin-left: 4px;
+}
+
+body.theme-dark .plan-card-price {
+  color: #f8fafc;
+}
+
+.plan-price-period {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary, #4b5563);
+}
+
+body.theme-dark .plan-price-period {
+  color: #94a3b8;
+}
+
+.plan-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 32px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.plan-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--text-primary, #1f2937);
+}
+
+body.theme-dark .plan-feature-item {
+  color: #e2e8f0;
+}
+
+.plan-feature-item.disabled {
+  color: var(--text-muted, #9ca3af);
+}
+
+body.theme-dark .plan-feature-item.disabled {
+  color: #64748b;
+}
+
+.plan-check-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #3e9c61;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.plan-check-icon.muted {
+  background-color: #d1d5db;
+  color: #6b7280;
+}
+
+body.theme-dark .plan-check-icon.muted {
+  background-color: #475569;
+  color: #94a3b8;
+}
+
+.plan-cross-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+body.theme-dark .plan-cross-icon {
+  background-color: #334155;
+  color: #64748b;
+}
+
+.plan-cta-button {
+  width: 100%;
+  background-color: var(--primary, #3d5ba9);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(61, 91, 169, 0.3);
+  text-align: center;
+}
+
+.plan-cta-button:hover {
+  background-color: var(--primary-hover, #30498c);
+  box-shadow: 0 6px 16px rgba(61, 91, 169, 0.45);
+  transform: translateY(-1px);
+}
+
+.plan-cta-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 680px) {
+  .plan-modal-card {
+    padding: 28px 20px 24px;
+  }
+
+  .plan-modal-title {
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+
+  .plan-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .plan-card {
+    padding: 24px 20px;
+  }
 }
