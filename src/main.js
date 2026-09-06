@@ -21,6 +21,15 @@ function filteredCommunities() {
 }
 
 function header() {
+  if (state.view === 'select-plan') {
+    return `
+      <header class="topbar-wrapper plan-page-header">
+        <div class="topbar-container plan-header-container">
+          <button class="wordmark" data-action="discover"><span>skill</span>space</button>
+        </div>
+      </header>
+    `;
+  }
   const user = store.user;
   const activeComm = state.selected ? (communities.find(c => c.id === state.selected) || communities[0]) : null;
   const isDetail = state.view === 'detail';
@@ -922,137 +931,137 @@ function settingsView() {
   `;
 }
 
-function planModalContent() {
+function selectPlanView() {
   const isYearly = state.planBilling === 'yearly';
   const hobbyPrice = isYearly ? '$7.50' : '$9';
   const proPrice = isYearly ? '$82' : '$99';
 
   return `
-    <div class="plan-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-      <button class="modal-close" data-action="close-modal" aria-label="Close modal">&times;</button>
-      
-      <h1 class="plan-modal-title">Select your plan</h1>
-      
-      <div class="plan-toggle-wrapper">
-        <div class="plan-toggle-container">
-          <button class="plan-toggle-btn ${!isYearly ? 'active' : ''}" data-action="toggle-plan-billing" data-billing="monthly">Monthly</button>
-          <div class="plan-toggle-yearly-box">
-            <span class="plan-free-badge">2 months free!</span>
-            <button class="plan-toggle-btn ${isYearly ? 'active' : ''}" data-action="toggle-plan-billing" data-billing="yearly">Yearly</button>
+    <main class="select-plan-page">
+      <div class="select-plan-container">
+        <h1 class="plan-page-title">Select your plan</h1>
+        
+        <div class="plan-toggle-wrapper">
+          <div class="plan-toggle-container">
+            <button class="plan-toggle-btn ${!isYearly ? 'active' : ''}" data-action="toggle-plan-billing" data-billing="monthly">Monthly</button>
+            <div class="plan-toggle-yearly-box">
+              <span class="plan-free-badge">2 months free!</span>
+              <button class="plan-toggle-btn ${isYearly ? 'active' : ''}" data-action="toggle-plan-billing" data-billing="yearly">Yearly</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-cards-grid">
+          <!-- Hobby Card -->
+          <div class="plan-card">
+            <div class="plan-card-header">
+              <h2 class="plan-card-name">Hobby</h2> <div class="plan-card-price">${hobbyPrice}<span class="plan-price-period">/month</span></div>
+            </div>
+
+            <ul class="plan-features-list">
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> members</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> courses</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> videos</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> live calls</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon muted">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>10%</strong> transaction fee</span>
+              </li>
+              <li class="plan-feature-item disabled">
+                <span class="plan-cross-icon">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
+                <span>Custom URL</span>
+              </li>
+              <li class="plan-feature-item disabled">
+                <span class="plan-cross-icon">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
+                <span>Affiliates</span>
+              </li>
+            </ul>
+
+            <button class="plan-cta-button" data-action="select-plan" data-plan="Hobby">TRY FOR FREE</button>
+          </div>
+
+          <!-- Pro Card -->
+          <div class="plan-card pro">
+            <div class="plan-card-header">
+              <h2 class="plan-card-name">Pro</h2> <div class="plan-card-price">${proPrice}<span class="plan-price-period">/month</span></div>
+            </div>
+
+            <ul class="plan-features-list">
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> members</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> courses</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> videos</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>Unlimited</strong> live calls</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span><strong>2.9%</strong> transaction fee</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span>Custom URL</span>
+              </li>
+              <li class="plan-feature-item">
+                <span class="plan-check-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span>Affiliates</span>
+              </li>
+            </ul>
+
+            <button class="plan-cta-button" data-action="select-plan" data-plan="Pro">TRY FOR FREE</button>
           </div>
         </div>
       </div>
-
-      <div class="plan-cards-grid">
-        <!-- Hobby Card -->
-        <div class="plan-card">
-          <div class="plan-card-header">
-            <h2 class="plan-card-name">Hobby</h2> <div class="plan-card-price">${hobbyPrice}<span class="plan-price-period">/month</span></div>
-          </div>
-
-          <ul class="plan-features-list">
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> members</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> courses</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> videos</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> live calls</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon muted">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>10%</strong> transaction fee</span>
-            </li>
-            <li class="plan-feature-item disabled">
-              <span class="plan-cross-icon">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </span>
-              <span>Custom URL</span>
-            </li>
-            <li class="plan-feature-item disabled">
-              <span class="plan-cross-icon">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </span>
-              <span>Affiliates</span>
-            </li>
-          </ul>
-
-          <button class="plan-cta-button" data-action="select-plan" data-plan="Hobby">TRY FOR FREE</button>
-        </div>
-
-        <!-- Pro Card -->
-        <div class="plan-card pro">
-          <div class="plan-card-header">
-            <h2 class="plan-card-name">Pro</h2> <div class="plan-card-price">${proPrice}<span class="plan-price-period">/month</span></div>
-          </div>
-
-          <ul class="plan-features-list">
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> members</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> courses</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> videos</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Unlimited</strong> live calls</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>2.9%</strong> transaction fee</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span>Custom URL</span>
-            </li>
-            <li class="plan-feature-item">
-              <span class="plan-check-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span>Affiliates</span>
-            </li>
-          </ul>
-
-          <button class="plan-cta-button" data-action="select-plan" data-plan="Pro">TRY FOR FREE</button>
-        </div>
-      </div>
-    </div>
+    </main>
   `;
 }
 
@@ -1262,10 +1271,10 @@ function bindAuth() {
 
 function render() {
   const app = document.querySelector('#app');
-  const body = state.view === 'discover' ? discoverView() : state.view === 'create-community' ? createCommunityView() : state.view === 'detail' ? detailView() : state.view === 'profile' ? profileView() : settingsView();
+  const body = state.view === 'discover' ? discoverView() : state.view === 'create-community' ? createCommunityView() : state.view === 'select-plan' ? selectPlanView() : state.view === 'detail' ? detailView() : state.view === 'profile' ? profileView() : settingsView();
   app.innerHTML = `${header()}${body}<div class="toast" id="toast"></div>`;
   document.body.classList.toggle('theme-dark', state.themeMode === 'dark');
-  document.body.classList.toggle('page-pure-white', state.view === 'create-community');
+  document.body.classList.toggle('page-pure-white', state.view === 'create-community' || state.view === 'select-plan');
   bind();
 }
 
@@ -1451,8 +1460,14 @@ function actions(action, element) {
     state.view = 'create-community';
     render();
   } else if (action === 'start-community-flow') {
-    state.modal = 'plan';
-    mountAuthModal();
+    state.view = 'select-plan';
+    render();
+  } else if (action === 'toggle-plan-billing') {
+    state.planBilling = element?.dataset.billing || 'monthly';
+    render();
+  } else if (action === 'select-plan') {
+    const selectedPlan = element?.dataset.plan || 'Pro';
+    showToast(`🎉 Selected ${selectedPlan} plan! Setting up your community...`);
   } else if (action === 'login' || action === 'register') {
     state.authMode = action;
     state.modal = 'auth';
