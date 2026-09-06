@@ -367,7 +367,7 @@ function detailView() {
 
             <div class="sidebar-card-content">
               <h2 class="sidebar-comm-title">${escapeHTML(community.title)}</h2>
-              <div class="sidebar-comm-url">skool.com/${community.slug || 'community'}</div>
+              <div class="sidebar-comm-url">skillspace.in/${community.slug || 'community'}</div>
               <p class="sidebar-comm-desc">${escapeHTML(community.description)}</p>
 
               <div class="sidebar-stats-row">
