@@ -21,15 +21,6 @@ function filteredCommunities() {
 }
 
 function header() {
-  if (state.view === 'select-plan') {
-    return `
-      <header class="topbar-wrapper plan-page-header">
-        <div class="topbar-container plan-header-container">
-          <button class="wordmark" data-action="discover"><span>skill</span>space</button>
-        </div>
-      </header>
-    `;
-  }
   const user = store.user;
   const activeComm = state.selected ? (communities.find(c => c.id === state.selected) || communities[0]) : null;
   const isDetail = state.view === 'detail';
@@ -1451,12 +1442,15 @@ function actions(action, element) {
     state.query = '';
     state.submittedQuery = '';
     render();
-  } else if (action === 'create' || action === 'start-community-flow') {
+  } else if (action === 'create') {
     state.profileMenu = false;
     state.brandMenu = false;
     state.filterMenu = false;
     const bMenu = document.querySelector('#brandDropdownMenu');
     if (bMenu) bMenu.classList.remove('active');
+    state.view = 'create-community';
+    render();
+  } else if (action === 'start-community-flow') {
     state.view = 'select-plan';
     render();
   } else if (action === 'toggle-plan-billing') {
