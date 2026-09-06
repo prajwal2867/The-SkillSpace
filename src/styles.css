@@ -3245,9 +3245,8 @@ body.theme-dark .carousel-dot {
 body.theme-dark .select-plan-page {
   background-color: #0f172a;
 }
-
 .select-plan-container {
-  max-width: 820px;
+  max-width: 980px;
   width: 100%;
   margin: 0 auto;
   display: flex;
@@ -3256,31 +3255,29 @@ body.theme-dark .select-plan-page {
 }
 
 .plan-page-title {
-  font-size: 38px;
+  font-size: 42px;
   font-weight: 800;
   text-align: center;
   color: var(--text-primary, #111827);
   margin-bottom: 32px;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.8px;
 }
 
 body.theme-dark .plan-page-title {
   color: #f8fafc;
 }
 
-
-
 .plan-toggle-wrapper {
   display: flex;
   justify-content: center;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .plan-toggle-container {
   display: inline-flex;
   align-items: center;
   background-color: #e5e7eb;
-  padding: 4px;
+  padding: 5px;
   border-radius: 9999px;
   position: relative;
 }
@@ -3290,8 +3287,8 @@ body.theme-dark .plan-toggle-container {
 }
 
 .plan-toggle-btn {
-  padding: 8px 32px;
-  font-size: 15px;
+  padding: 10px 38px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-secondary, #4b5563);
   border-radius: 9999px;
@@ -3324,14 +3321,14 @@ body.theme-dark .plan-toggle-btn.active {
 
 .plan-free-badge {
   position: absolute;
-  top: -18px;
-  right: 12px;
+  top: -20px;
+  right: 14px;
   background-color: #2e7d32;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 5px;
   white-space: nowrap;
   box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3);
   pointer-events: none;
@@ -3340,19 +3337,20 @@ body.theme-dark .plan-toggle-btn.active {
 .plan-cards-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 28px;
+  width: 100%;
 }
 
 .plan-card {
   background-color: #ffffff;
   border: 1.5px solid var(--border, #e5e7eb);
-  border-radius: 14px;
-  padding: 32px 28px;
+  border-radius: 16px;
+  padding: 44px 38px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
 body.theme-dark .plan-card {
@@ -3362,21 +3360,22 @@ body.theme-dark .plan-card {
 
 .plan-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.09);
 }
 
 .plan-card-header {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
 .plan-card-name {
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 800;
   color: var(--text-primary, #111827);
   display: inline;
+  letter-spacing: -0.5px;
 }
 
 body.theme-dark .plan-card-name {
@@ -3384,11 +3383,11 @@ body.theme-dark .plan-card-name {
 }
 
 .plan-card-price {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-primary, #111827);
   display: inline;
-  margin-left: 4px;
+  margin-left: 6px;
 }
 
 body.theme-dark .plan-card-price {
@@ -3396,7 +3395,7 @@ body.theme-dark .plan-card-price {
 }
 
 .plan-price-period {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: var(--text-secondary, #4b5563);
 }
@@ -3408,17 +3407,17 @@ body.theme-dark .plan-price-period {
 .plan-features-list {
   list-style: none;
   padding: 0;
-  margin: 24px 0 32px 0;
+  margin: 30px 0 38px 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .plan-feature-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 15px;
+  gap: 14px;
+  font-size: 16px;
   color: var(--text-primary, #1f2937);
 }
 
@@ -3435,8 +3434,8 @@ body.theme-dark .plan-feature-item.disabled {
 }
 
 .plan-check-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background-color: #3e9c61;
   color: #ffffff;
@@ -3457,8 +3456,8 @@ body.theme-dark .plan-check-icon.muted {
 }
 
 .plan-cross-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background-color: #e5e7eb;
   color: #9ca3af;
