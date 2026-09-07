@@ -2,7 +2,7 @@ import './styles.css';
 import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 
-const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], planBilling: 'monthly' };
+const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], planBilling: 'monthly', selectedPlan: null };
 const icon = (name) => ({
   search: '⌕',
   bell: '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10Z"></path><path d="M10 21h4"></path></svg>',
@@ -1056,6 +1056,39 @@ function selectPlanView() {
   `;
 }
 
+function planModalContent() {
+  const planName = state.selectedPlan || 'Hobby';
+  const isYearly = state.planBilling === 'yearly';
+  const price = planName === 'Pro' ? (isYearly ? '$82' : '$99') : (isYearly ? '$7.50' : '$9');
+  const chargeDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  return `
+    <section class="plan-modal-card" role="dialog" aria-modal="true" aria-labelledby="plan-modal-title" onclick="event.stopPropagation()">
+      <button class="modal-close" data-action="close-modal" aria-label="Close">&times;</button>
+      <div class="plan-modal-logo" aria-label="SkillSpace"><span>skill</span>space</div>
+      <h2 id="plan-modal-title">Create your community</h2>
+      <p class="plan-modal-subtitle">14-day free trial of ${escapeHTML(planName)} ${price}/month <button type="button" class="plan-change-link" data-action="change-plan">(change)</button></p>
+      <form id="planCheckoutForm" class="plan-checkout-form">
+        <div class="plan-field-group">
+          <label for="communityName">Group name</label>
+          <input id="communityName" name="communityName" maxlength="30" placeholder="Group name" required autofocus>
+          <div class="plan-field-hint"><em>You can change this later</em><span id="communityNameCount">0 / 30</span></div>
+        </div>
+        <div class="plan-card-input" aria-label="Payment card details">
+          <span class="plan-card-icon">▣</span>
+          <input name="cardNumber" data-card-step="cardNumber" inputmode="numeric" maxlength="16" placeholder="Card number" aria-label="Card number" required>
+          <input name="expiryMonth" data-card-step="expiryMonth" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Expiration month" required>
+          <span class="plan-card-expiry-separator" aria-hidden="true">/</span>
+          <input name="expiryYear" data-card-step="expiryYear" inputmode="numeric" maxlength="2" placeholder="YY" aria-label="Expiration year" required>
+          <input name="cvc" data-card-step="cvc" inputmode="numeric" maxlength="3" placeholder="CVC" aria-label="CVC" required>
+        </div>
+        <button type="submit" class="plan-trial-button">START FREE TRIAL</button>
+      </form>
+      <p class="plan-modal-note">Your 1st charge will be on ${chargeDate} for ${price}. We'll email you 3-days before to remind you. Cancel anytime with 1-click.</p>
+    </section>
+  `;
+}
+
 function modalCardContent() {
   if (state.modal === 'plan') {
     return planModalContent();
@@ -1214,6 +1247,15 @@ function bindAuth() {
     };
   });
 
+  backdrop.querySelectorAll('[data-action="change-plan"]').forEach((element) => {
+    element.onclick = (e) => {
+      e.stopPropagation();
+      closeAuthModal();
+      state.view = 'select-plan';
+      render();
+    };
+  });
+
   backdrop.onclick = (event) => {
     if (event.target === backdrop) closeAuthModal();
   };
@@ -1253,9 +1295,47 @@ function bindAuth() {
       const user = findAuthUser(email, passwordHash) || store.findUser(email);
       if (!user || user.passwordHash !== passwordHash) return setAuthMessage('Invalid email or password.');
       store.saveSession(user);
-      closeAuthModal();
       refreshHeader();
-      showToast('Welcome back');
+      if (state.selectedPlan) {
+        state.modal = 'plan';
+        state.authMessage = '';
+        const backdrop = document.querySelector('.modal-backdrop');
+        backdrop.innerHTML = modalCardContent();
+        bindAuth();
+      } else {
+        closeAuthModal();
+        showToast('Welcome back');
+      }
+    };
+  }
+
+  const planCheckoutForm = document.querySelector('#planCheckoutForm');
+  if (planCheckoutForm) {
+    const communityName = planCheckoutForm.querySelector('[name="communityName"]');
+    communityName?.addEventListener('input', (event) => {
+      const counter = document.querySelector('#communityNameCount');
+      if (counter) counter.textContent = `${event.target.value.length} / 30`;
+    });
+
+    const cardSteps = [...planCheckoutForm.querySelectorAll('[data-card-step]')];
+    cardSteps.forEach((field, index) => {
+      field.addEventListener('input', (event) => {
+        event.target.value = event.target.value.replace(/\D/g, '').slice(0, Number(event.target.maxLength));
+        if (event.target.value.length === Number(event.target.maxLength)) cardSteps[index + 1]?.focus();
+      });
+      field.addEventListener('keydown', (event) => {
+        if (event.key === 'Backspace' && !event.target.value && index > 0) {
+          cardSteps[index - 1].focus();
+        }
+      });
+    });
+
+    planCheckoutForm.onsubmit = (event) => {
+      event.preventDefault();
+      const name = new FormData(planCheckoutForm).get('communityName').trim();
+      closeAuthModal();
+      state.selectedPlan = null;
+      showToast(`Your ${name} community is being set up.`);
     };
   }
 }
@@ -1458,7 +1538,10 @@ function actions(action, element) {
     render();
   } else if (action === 'select-plan') {
     const selectedPlan = element?.dataset.plan || 'Pro';
-    showToast(`Selected ${selectedPlan} plan! Setting up your community...`);
+    state.selectedPlan = selectedPlan;
+    state.modal = store.user ? 'plan' : 'auth';
+    if (!store.user) state.authMode = 'login';
+    mountAuthModal();
   } else if (action === 'login' || action === 'register') {
     state.authMode = action;
     state.modal = 'auth';
