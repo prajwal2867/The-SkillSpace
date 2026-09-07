@@ -1321,7 +1321,7 @@ function bindAuth() {
       const month = Number(expiryMonth.value);
       const isReady = communityName.value.trim().length > 0
         && /^\d{1,16}$/.test(cardNumber.value)
-        && /^(0[1-9]|1[0-2])$/.test(expiryMonth.value)
+        && /^\d{1,2}$/.test(expiryMonth.value)
         && /^\d{2}$/.test(expiryYear.value)
         && /^\d{3}$/.test(cvc.value)
         && month >= 1 && month <= 12;
