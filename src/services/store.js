@@ -2,6 +2,7 @@ const USER_KEY = 'skillspace_user_v2';
 const POSTS_KEY = 'skillspace_posts_v2';
 const USERS_KEY = 'skillspace_users_v2';
 const SESSION_KEY = 'skillspace_session_v2';
+const COMMUNITIES_KEY = 'skillspace_communities_v1';
 
 export const store = {
   get user() { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); },
@@ -14,5 +15,7 @@ export const store = {
   saveSession(user) { const session = { token: crypto.randomUUID(), userId: user.id, createdAt: Date.now(), expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 }; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); this.user = user; return session.token; },
   clearSession() { localStorage.removeItem(SESSION_KEY); this.user = null; },
   get posts() { return JSON.parse(localStorage.getItem(POSTS_KEY) || '[]'); },
-  addPost(post) { localStorage.setItem(POSTS_KEY, JSON.stringify([post, ...this.posts])); }
+  addPost(post) { localStorage.setItem(POSTS_KEY, JSON.stringify([post, ...this.posts])); },
+  get communities() { return JSON.parse(localStorage.getItem(COMMUNITIES_KEY) || '[]'); },
+  saveCommunity(community) { localStorage.setItem(COMMUNITIES_KEY, JSON.stringify([...this.communities, community])); }
 };

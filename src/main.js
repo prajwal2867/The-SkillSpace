@@ -3,6 +3,9 @@ import { categories, chats, communities, demoUsers, notifications } from './doma
 import { store } from './services/store.js';
 
 const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], planBilling: 'monthly', selectedPlan: null };
+store.communities.forEach((community) => {
+  if (!communities.some((item) => item.id === community.id)) communities.push(community);
+});
 const icon = (name) => ({
   search: '⌕',
   bell: '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10Z"></path><path d="M10 21h4"></path></svg>',
@@ -23,7 +26,7 @@ function filteredCommunities() {
 function header() {
   const user = store.user;
   const activeComm = state.selected ? (communities.find(c => c.id === state.selected) || communities[0]) : null;
-  const isDetail = state.view === 'detail';
+  const isDetail = state.view === 'detail' || state.view === 'creator-community';
 
   const topSearch = `
     <form class="topbar-search-form" id="topSearch">
@@ -116,7 +119,7 @@ function header() {
   ` : '';
 
   return `
-    <header class="topbar-wrapper">
+    <header class="topbar-wrapper ${state.view === 'creator-community' ? 'creator-topbar' : ''}">
       <div class="topbar-container">
         <div class="topbar-left-group">
           ${brandArea}
@@ -138,6 +141,49 @@ function header() {
       </div>
       ${subTabs}
     </header>
+  `;
+}
+
+function creatorCommunityView() {
+  const community = communities.find((item) => item.id === state.selected) || communities[0];
+  const user = store.user || { name: 'Creator' };
+  const userAvatar = user.pfp || community.creatorAvatar;
+  return `
+    <main class="creator-community-page">
+      <div class="creator-community-layout">
+        <section class="creator-community-main">
+          <div class="creator-composer" data-action="create-post">
+            ${userAvatar ? `<img src="${userAvatar}" alt="${escapeHTML(user.name)}" class="creator-avatar">` : `<span class="creator-avatar creator-avatar-fallback">${initials(user)}</span>`}
+            <span>Write something</span>
+          </div>
+          <div class="creator-feed-toolbar">
+            <button class="creator-filter active">All</button>
+            <button class="creator-filter">General discussion</button>
+            <button class="creator-settings-button" aria-label="Filter posts">☷</button>
+          </div>
+          <section class="setup-card">
+            <div class="setup-card-heading"><span class="setup-progress" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
+            <div class="setup-item"><span class="setup-circle"></span><span>Invite 3 people</span></div>
+            <div class="setup-item"><span class="setup-circle"></span><span>Add group description</span></div>
+            <div class="setup-item"><span class="setup-circle"></span><span>Set cover image</span></div>
+            <div class="setup-item"><span class="setup-circle"></span><span>Write your first post</span></div>
+          </section>
+        </section>
+        <aside class="creator-community-sidebar">
+          <div class="creator-group-card">
+            <div class="creator-cover-placeholder"><span>Upload cover photo</span></div>
+            <div class="creator-group-content">
+              <h1>${escapeHTML(community.title)}</h1>
+              <p class="creator-private-label">♙ Private group</p>
+              <p class="creator-group-description">Add your group description here by clicking the “Settings” button.</p>
+              <div class="creator-stat-row"><div><strong>1</strong><span>Members</span></div><div><strong>0</strong><span>Online</span></div><div><strong>1</strong><span>Admins</span></div></div>
+              <button class="creator-settings-cta" data-action="settings">SETTINGS</button>
+            </div>
+          </div>
+          <p class="creator-powered-by">powered by <strong>skillspace</strong></p>
+        </aside>
+      </div>
+    </main>
   `;
 }
 
@@ -1352,16 +1398,40 @@ function bindAuth() {
     planCheckoutForm.onsubmit = (event) => {
       event.preventDefault();
       const name = new FormData(planCheckoutForm).get('communityName').trim();
+      const user = store.user || { name: 'Creator' };
+      const community = {
+        id: `created-${crypto.randomUUID()}`,
+        title: name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        description: 'A private community for creators.',
+        members: '1',
+        onlineCount: '0',
+        adminsCount: '1',
+        price: 'Free trial',
+        priceType: 'Free',
+        accessType: 'Private',
+        category: 'Trending',
+        cover: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=85',
+        creatorName: user.name || 'Creator',
+        creatorAvatar: user.pfp || ''
+      };
+      communities.push(community);
+      store.saveCommunity(community);
+      state.joinedCommunities = [...new Set([...(state.joinedCommunities || []), community.id])];
+      state.selected = community.id;
+      state.communityTab = 'Community';
+      state.view = 'creator-community';
       closeAuthModal();
       state.selectedPlan = null;
-      showToast(`Your ${name} community is being set up.`);
+      render();
+      showToast(`${name} is ready to set up.`);
     };
   }
 }
 
 function render() {
   const app = document.querySelector('#app');
-  const body = state.view === 'discover' ? discoverView() : state.view === 'create-community' ? createCommunityView() : state.view === 'select-plan' ? selectPlanView() : state.view === 'detail' ? detailView() : state.view === 'profile' ? profileView() : settingsView();
+  const body = state.view === 'discover' ? discoverView() : state.view === 'create-community' ? createCommunityView() : state.view === 'select-plan' ? selectPlanView() : state.view === 'detail' ? detailView() : state.view === 'creator-community' ? creatorCommunityView() : state.view === 'profile' ? profileView() : settingsView();
   app.innerHTML = `${header()}${body}<div class="toast" id="toast"></div>`;
   document.body.classList.toggle('theme-dark', state.themeMode === 'dark');
   document.body.classList.toggle('page-pure-white', state.view === 'create-community' || state.view === 'select-plan');
