@@ -2770,8 +2770,21 @@ body.theme-dark .topbar-search-form {
   cursor: pointer;
 }
 
+.plan-trial-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.plan-trial-button:not(:disabled) {
+  background: var(--primary);
+}
+
 .plan-trial-button:hover {
   background: #9d9d9d;
+}
+
+.plan-trial-button:not(:disabled):hover {
+  background: var(--primary-hover);
 }
 
 .plan-modal-note {

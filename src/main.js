@@ -1082,7 +1082,7 @@ function planModalContent() {
           <input name="expiryYear" data-card-step="expiryYear" inputmode="numeric" maxlength="2" placeholder="YY" aria-label="Expiration year" required>
           <input name="cvc" data-card-step="cvc" inputmode="numeric" maxlength="3" placeholder="CVC" aria-label="CVC" required>
         </div>
-        <button type="submit" class="plan-trial-button">START FREE TRIAL</button>
+        <button type="submit" class="plan-trial-button" disabled>START FREE TRIAL</button>
       </form>
       <p class="plan-modal-note">Your 1st charge will be on ${chargeDate} for ${price}. We'll email you 3-days before to remind you. Cancel anytime with 1-click.</p>
     </section>
@@ -1312,9 +1312,26 @@ function bindAuth() {
   const planCheckoutForm = document.querySelector('#planCheckoutForm');
   if (planCheckoutForm) {
     const communityName = planCheckoutForm.querySelector('[name="communityName"]');
+    const trialButton = planCheckoutForm.querySelector('.plan-trial-button');
+    const cardNumber = planCheckoutForm.querySelector('[name="cardNumber"]');
+    const expiryMonth = planCheckoutForm.querySelector('[name="expiryMonth"]');
+    const expiryYear = planCheckoutForm.querySelector('[name="expiryYear"]');
+    const cvc = planCheckoutForm.querySelector('[name="cvc"]');
+    const updateTrialButton = () => {
+      const month = Number(expiryMonth.value);
+      const isReady = communityName.value.trim().length > 0
+        && /^\d{1,16}$/.test(cardNumber.value)
+        && /^(0[1-9]|1[0-2])$/.test(expiryMonth.value)
+        && /^\d{2}$/.test(expiryYear.value)
+        && /^\d{3}$/.test(cvc.value)
+        && month >= 1 && month <= 12;
+      trialButton.disabled = !isReady;
+    };
+
     communityName?.addEventListener('input', (event) => {
       const counter = document.querySelector('#communityNameCount');
       if (counter) counter.textContent = `${event.target.value.length} / 30`;
+      updateTrialButton();
     });
 
     const cardSteps = [...planCheckoutForm.querySelectorAll('[data-card-step]')];
@@ -1322,6 +1339,7 @@ function bindAuth() {
       field.addEventListener('input', (event) => {
         event.target.value = event.target.value.replace(/\D/g, '').slice(0, Number(event.target.maxLength));
         if (event.target.value.length === Number(event.target.maxLength)) cardSteps[index + 1]?.focus();
+        updateTrialButton();
       });
       field.addEventListener('keydown', (event) => {
         if (event.key === 'Backspace' && !event.target.value && index > 0) {
@@ -1329,6 +1347,7 @@ function bindAuth() {
         }
       });
     });
+    updateTrialButton();
 
     planCheckoutForm.onsubmit = (event) => {
       event.preventDefault();
