@@ -1722,11 +1722,13 @@ function actions(action, element) {
     }
     render();
   } else if (action === 'toggle-brand-menu') {
-    const menu = document.querySelector('#brandDropdownMenu');
-    if (menu) {
-      state.brandMenu = !state.brandMenu;
-      menu.classList.toggle('active', state.brandMenu);
+    state.brandMenu = !state.brandMenu;
+    if (state.brandMenu) {
+      state.profileMenu = false;
+      state.chatMenu = false;
+      state.filterMenu = false;
     }
+    render();
   } else if (action === 'clear-search') {
     state.query = '';
     state.submittedQuery = '';
@@ -1769,18 +1771,22 @@ function actions(action, element) {
       state.modal = 'auth';
       mountAuthModal();
     } else {
-      const menu = document.querySelector('#userProfileMenu');
-      if (menu) {
-        state.profileMenu = !state.profileMenu;
-        menu.classList.toggle('active', state.profileMenu);
+      state.profileMenu = !state.profileMenu;
+      if (state.profileMenu) {
+        state.chatMenu = false;
+        state.brandMenu = false;
+        state.filterMenu = false;
       }
+      render();
     }
   } else if (action === 'toggle-filter-menu') {
-    const popup = document.querySelector('#filterPopup');
-    if (popup) {
-      state.filterMenu = !state.filterMenu;
-      popup.classList.toggle('active', state.filterMenu);
+    state.filterMenu = !state.filterMenu;
+    if (state.filterMenu) {
+      state.profileMenu = false;
+      state.chatMenu = false;
+      state.brandMenu = false;
     }
+    render();
   } else if (action === 'profile-page') {
     const menu = document.querySelector('#userProfileMenu');
     if (menu) menu.classList.remove('active');
@@ -1799,9 +1805,10 @@ function actions(action, element) {
     const menu = document.querySelector('#userProfileMenu');
     if (menu) menu.classList.remove('active');
     state.profileMenu = false;
-    state.joinedCommunities = [];
-    state.selected = null;
-    state.view = 'discover';
+    state.brandMenu = false;
+    state.filterMenu = false;
+    state.chatMenu = false;
+    document.body.classList.remove('chat-open');
     render();
   } else if (action === 'join') {
     if (!store.user) {
@@ -1827,6 +1834,11 @@ function actions(action, element) {
     showToast(`${notifications.length} new notifications`);
   } else if (action === 'chats') {
     state.chatMenu = !state.chatMenu;
+    if (state.chatMenu) {
+      state.profileMenu = false;
+      state.brandMenu = false;
+      state.filterMenu = false;
+    }
     render();
   } else if (action === 'mark-chats-read') {
     chats.forEach((chat) => { chat.unread = false; });
