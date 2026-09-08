@@ -447,7 +447,7 @@ export const notifications = [
 ];
 
 export const chats = [
-  { user: 'Simran Iyer', text: 'Welcome to Excel Mastery! Check step one.', time: '1h', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-  { user: 'Nitin Goyal', text: 'That is all you have left before launch.', time: 'Oct 25', avatar: 'https://randomuser.me/api/portraits/men/45.jpg' },
-  { user: 'Rohan Reddy', text: 'It is impressive you are developing AI models.', time: 'Feb 25', avatar: 'https://randomuser.me/api/portraits/men/62.jpg' }
+  { user: 'Simran Iyer', text: 'Hi Prajwal, welcome to MBS! I\'m one of the group tutors. ...', time: '6m', avatar: 'https://randomuser.me/api/portraits/women/44.jpg', unread: true },
+  { user: 'Nitin Goyal', text: 'That is all you have left before launch.', time: 'Oct 25', avatar: 'https://randomuser.me/api/portraits/men/45.jpg', unread: false },
+  { user: 'Rohan Reddy', text: 'It is impressive you are developing AI models.', time: 'Feb 25', avatar: 'https://randomuser.me/api/portraits/men/62.jpg', unread: false }
 ];

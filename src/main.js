@@ -2,7 +2,7 @@ import './styles.css';
 import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 
-const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], profileCommunityView: 'memberships', planBilling: 'monthly', selectedPlan: null };
+const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, chatMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], profileCommunityView: 'memberships', planBilling: 'monthly', selectedPlan: null };
 store.communities.forEach((community) => {
   const savedCommunity = String(community.id).startsWith('created-') ? { ...community, cover: '', creatorAvatar: '' } : community;
   if (!String(savedCommunity.id).startsWith('created-') || String(savedCommunity.ownerId) === String(store.user?.id)) {
@@ -20,6 +20,8 @@ const initials = (user = store.user) => (user?.name || user?.email || 'U').slice
 const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const addImageIcon = (className = '') => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path></svg>`;
 const isVisibleCommunity = (community) => !String(community.id).startsWith('created-') || String(community.ownerId) === String(store.user?.id);
+const chatItems = chats.map((chat) => ({ ...chat, member: dummyUsers.find((user) => user.name === chat.user) })).filter((chat) => chat.member);
+const unreadChatCount = chatItems.filter((chat) => chat.unread).length;
 function syncOwnedCommunities() {
   store.communities.forEach((community) => {
     if (String(community.id).startsWith('created-') && String(community.ownerId) === String(store.user?.id) && !communities.some((item) => item.id === community.id)) {
@@ -139,7 +141,14 @@ function header() {
         </div>
         <div class="top-actions">
           ${user ? `
-            <button class="round-button" data-action="chats" aria-label="Chats">${icon('chat')}<i>1</i></button>
+            <div class="chat-control" id="chatControlContainer">
+              <button class="round-button" data-action="chats" aria-label="Chats" aria-expanded="${state.chatMenu}">${icon('chat')}${unreadChatCount ? `<i>${unreadChatCount}</i>` : ''}</button>
+              <section class="chat-menu${state.chatMenu ? ' active' : ''}" id="chatMenu" aria-label="Chats">
+                <div class="chat-menu-header"><strong>Chats</strong><button type="button" class="chat-read-link" data-action="mark-chats-read">Mark all as read</button><button type="button" class="chat-filter-button">All <span>⌄</span></button></div>
+                <label class="chat-search"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" placeholder="Search users" aria-label="Search users"></label>
+                <div class="chat-list">${chatItems.map((chat) => `<button type="button" class="chat-row${chat.unread ? ' unread' : ''}"><img src="${chat.avatar}" alt=""><span class="chat-row-content"><strong>${escapeHTML(chat.member.name)}${chat.unread ? ` <em>(1)</em>` : ''} <small>• ${escapeHTML(chat.time)}</small></strong><span>${escapeHTML(chat.text)}</span></span>${chat.unread ? '<i class="chat-unread-dot"></i>' : ''}</button>`).join('')}</div>
+              </section>
+            </div>
             <button class="round-button" data-action="notifications" aria-label="Notifications">${icon('bell')}<i>3</i></button>
             <div class="profile-control" id="profileControlContainer">
               <button class="avatar" data-action="profile" aria-label="Account menu">${initials()}</button>
@@ -1536,6 +1545,7 @@ function render() {
   const body = state.view === 'discover' ? discoverView() : state.view === 'create-community' ? createCommunityView() : state.view === 'select-plan' ? selectPlanView() : state.view === 'detail' ? detailView() : state.view === 'creator-community' ? creatorCommunityView() : state.view === 'profile' ? profileView() : settingsView();
   app.innerHTML = `${header()}${body}<div class="toast" id="toast"></div>`;
   document.body.classList.toggle('theme-dark', state.themeMode === 'dark');
+  document.body.classList.toggle('chat-open', state.chatMenu);
   document.body.classList.toggle('page-pure-white', state.view === 'create-community' || state.view === 'select-plan');
   bind();
 }
@@ -1685,6 +1695,14 @@ document.addEventListener('click', (event) => {
     filterPopup.classList.remove('active');
     state.filterMenu = false;
   }
+
+  const chatMenu = document.querySelector('#chatMenu');
+  const chatContainer = document.querySelector('#chatControlContainer');
+  if (chatMenu && chatContainer && !chatContainer.contains(event.target)) {
+    chatMenu.classList.remove('active');
+    state.chatMenu = false;
+    document.body.classList.remove('chat-open');
+  }
 });
 
 function actions(action, element) {
@@ -1808,7 +1826,12 @@ function actions(action, element) {
   } else if (action === 'notifications') {
     showToast(`${notifications.length} new notifications`);
   } else if (action === 'chats') {
-    showToast(`${chats.length} conversations waiting`);
+    state.chatMenu = !state.chatMenu;
+    render();
+  } else if (action === 'mark-chats-read') {
+    chats.forEach((chat) => { chat.unread = false; });
+    state.chatMenu = true;
+    render();
   } else if (action === 'language' || action === 'help') {
     const menu = document.querySelector('#userProfileMenu');
     if (menu) menu.classList.remove('active');
