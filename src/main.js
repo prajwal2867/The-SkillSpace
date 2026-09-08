@@ -214,6 +214,15 @@ function card(community, index) {
   return `<article class="community-card" style="--accent:${community.accent};--delay:${index * 45}ms" data-community="${community.id}"><div class="card-image">${image}<span class="card-tag">${community.tag}</span></div><div class="card-body"><div class="eyebrow">${community.category} <span>·</span> ${community.accessType === 'Private' ? icon('lock') + ' Private' : 'Open access'}</div><h2>${escapeHTML(community.title)}</h2><p>${escapeHTML(community.description)}</p><footer><span><strong>${community.members}</strong> members</span><span class="price">${community.price}</span></footer></div></article>`;
 }
 
+function profileCommunityRow(community) {
+  const iconSource = community.creatorAvatar || community.cover;
+  const iconMarkup = iconSource
+    ? `<img src="${escapeHTML(iconSource)}" alt="${escapeHTML(community.title)} icon">`
+    : addImageIcon('profile-community-placeholder-icon');
+  const isFree = community.priceType === 'Free' || community.price === 'Free' || community.price === 'Free trial';
+  return `<button type="button" class="profile-community-row" data-community="${escapeHTML(community.id)}"><span class="profile-community-icon">${iconMarkup}</span><span class="profile-community-info"><strong>${escapeHTML(community.title)}</strong><span>${escapeHTML(community.members || '0')} members · ${isFree ? 'Free' : 'Paid'}</span></span></button>`;
+}
+
 function discoverView() {
   const results = filteredCommunities();
   const resultHeading = state.submittedQuery ? `<div class="result-heading"><span>${results.length} results for <strong>"${escapeHTML(state.submittedQuery)}"</strong></span><button class="filter-button" data-action="filters">Filter ${icon('plus')}</button></div>` : '';
@@ -592,7 +601,7 @@ function profileView() {
                 <button type="button" class="profile-community-toggle-btn${state.profileCommunityView === 'created' ? ' active' : ''}" data-action="toggle-profile-community" data-community-view="created" role="tab" aria-selected="${state.profileCommunityView === 'created'}">My communities</button>
               </div>
             </div>
-            ${profileCommunities.length ? `<div class="profile-community-grid">${profileCommunities.map((community, index) => card(community, index)).join('')}</div>` : `<div class="empty-state-box"><p class="text-secondary" style="margin:0; font-size:14px;">${state.profileCommunityView === 'created' ? 'You have not created any communities yet.' : 'No memberships yet. Join a community to get started!'}</p></div>`}
+            ${profileCommunities.length ? `<div class="profile-community-list">${profileCommunities.map(profileCommunityRow).join('')}</div>` : `<div class="empty-state-box"><p class="text-secondary" style="margin:0; font-size:14px;">${state.profileCommunityView === 'created' ? 'You have not created any communities yet.' : 'No memberships yet. Join a community to get started!'}</p></div>`}
           </div>
 
           <!-- Contributions Section -->
