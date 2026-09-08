@@ -4,7 +4,8 @@ import { store } from './services/store.js';
 
 const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], planBilling: 'monthly', selectedPlan: null };
 store.communities.forEach((community) => {
-  if (!communities.some((item) => item.id === community.id)) communities.push(community);
+  const savedCommunity = String(community.id).startsWith('created-') ? { ...community, cover: '', creatorAvatar: '' } : community;
+  if (!communities.some((item) => item.id === savedCommunity.id)) communities.push(savedCommunity);
 });
 const icon = (name) => ({
   search: '⌕',
@@ -15,6 +16,7 @@ const icon = (name) => ({
 }[name] || '•');
 const initials = (user = store.user) => (user?.name || user?.email || 'U').slice(0, 1).toUpperCase();
 const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+const addImageIcon = (className = '') => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path></svg>`;
 
 function filteredCommunities() {
   const query = state.submittedQuery.toLowerCase();
@@ -63,7 +65,7 @@ function header() {
       ${backButton}
       ${isDetail && activeComm ? `
         <div class="community-header-brand" data-action="toggle-brand-menu">
-          <img src="${activeComm.creatorAvatar || activeComm.cover}" class="community-brand-icon" alt="">
+          ${activeComm.creatorAvatar || activeComm.cover ? `<img src="${activeComm.creatorAvatar || activeComm.cover}" class="community-brand-icon" alt="">` : `<span class="community-brand-icon community-brand-icon-placeholder">${addImageIcon()}</span>`}
           <span class="community-brand-name">${escapeHTML(activeComm.title)}</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -85,7 +87,7 @@ function header() {
         <div class="brand-community-list" id="brandCommunityList">
           ${(state.joinedCommunities || []).length > 0 ? (state.joinedCommunities.map(id => communities.find(c => c.id === id)).filter(Boolean)).map(comm => `
             <div class="brand-community-item" data-action="select-community" data-id="${comm.id}">
-              <img src="${comm.cover}" class="brand-comm-avatar" alt="${escapeHTML(comm.title)}">
+              ${comm.cover ? `<img src="${comm.cover}" class="brand-comm-avatar" alt="${escapeHTML(comm.title)}">` : `<span class="brand-comm-avatar brand-comm-avatar-placeholder">${addImageIcon()}</span>`}
               <span class="brand-comm-title">${escapeHTML(comm.title)}</span>
             </div>
           `).join('') : ''}
@@ -163,21 +165,31 @@ function creatorCommunityView() {
           </div>
           <section class="setup-card">
             <div class="setup-card-heading"><span class="setup-progress" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
-            <div class="setup-item"><span class="setup-circle"></span><span>Invite 3 people</span></div>
-            <div class="setup-item"><span class="setup-circle"></span><span>Add group description</span></div>
-            <div class="setup-item"><span class="setup-circle"></span><span>Set cover image</span></div>
-            <div class="setup-item"><span class="setup-circle"></span><span>Write your first post</span></div>
+            <div class="setup-item"><span class="setup-circle"></span><a href="#invite-people">Invite 3 people</a></div>
+            <div class="setup-item"><span class="setup-circle"></span><a href="#group-description" data-action="community-settings">Add group description</a></div>
+            <div class="setup-item"><span class="setup-circle"></span><a href="#cover-image">Set cover image</a></div>
+            <div class="setup-item"><span class="setup-circle"></span><a href="#first-post">Write your first post</a></div>
           </section>
         </section>
         <aside class="creator-community-sidebar">
           <div class="creator-group-card">
-            <div class="creator-cover-placeholder"><span>Upload cover photo</span></div>
+            <div class="creator-cover-placeholder">${community.cover ? `<img src="${escapeHTML(community.cover)}" alt="${escapeHTML(community.title)} cover">` : addImageIcon('creator-add-image-icon')}</div>
             <div class="creator-group-content">
               <h1>${escapeHTML(community.title)}</h1>
-              <p class="creator-private-label">♙ Private group</p>
-              <p class="creator-group-description">Add your group description here by clicking the “Settings” button.</p>
+              <p class="creator-group-url">skillspace.in/${escapeHTML(community.slug || 'community')}</p>
+              <p class="creator-private-label">♙ ${escapeHTML(community.accessType || 'Private')} group</p>
+              <p class="creator-group-description">${escapeHTML(community.description || 'Add your group description here by clicking the “Settings” button.')}</p>
               <div class="creator-stat-row"><div><strong>1</strong><span>Members</span></div><div><strong>0</strong><span>Online</span></div><div><strong>1</strong><span>Admins</span></div></div>
-              <button class="creator-settings-cta" data-action="settings">SETTINGS</button>
+              <div class="creator-avatar-stack">
+                <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
+                <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="">
+                <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="">
+                <img src="https://randomuser.me/api/portraits/women/24.jpg" alt="">
+                <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
+                <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
+              </div>
+              <button class="creator-settings-cta" type="button">SETTINGS</button>
             </div>
           </div>
           <p class="creator-powered-by">powered by <strong>skillspace</strong></p>
@@ -188,7 +200,8 @@ function creatorCommunityView() {
 }
 
 function card(community, index) {
-  return `<article class="community-card" style="--accent:${community.accent};--delay:${index * 45}ms" data-community="${community.id}"><div class="card-image"><img src="${community.cover}" alt="${escapeHTML(community.title)} cover"><span class="card-tag">${community.tag}</span></div><div class="card-body"><div class="eyebrow">${community.category} <span>·</span> ${community.accessType === 'Private' ? icon('lock') + ' Private' : 'Open access'}</div><h2>${escapeHTML(community.title)}</h2><p>${escapeHTML(community.description)}</p><footer><span><strong>${community.members}</strong> members</span><span class="price">${community.price}</span></footer></div></article>`;
+  const image = community.cover ? `<img src="${community.cover}" alt="${escapeHTML(community.title)} cover">` : addImageIcon('card-add-image-icon');
+  return `<article class="community-card" style="--accent:${community.accent};--delay:${index * 45}ms" data-community="${community.id}"><div class="card-image">${image}<span class="card-tag">${community.tag}</span></div><div class="card-body"><div class="eyebrow">${community.category} <span>·</span> ${community.accessType === 'Private' ? icon('lock') + ' Private' : 'Open access'}</div><h2>${escapeHTML(community.title)}</h2><p>${escapeHTML(community.description)}</p><footer><span><strong>${community.members}</strong> members</span><span class="price">${community.price}</span></footer></div></article>`;
 }
 
 function discoverView() {
@@ -1135,9 +1148,49 @@ function planModalContent() {
   `;
 }
 
+function communitySettingsModalContent() {
+  const community = communities.find((item) => item.id === state.selected) || communities[0];
+  const title = escapeHTML(community.title);
+  const description = escapeHTML(community.description || '');
+  const initialsText = escapeHTML((community.title || 'C').slice(0, 2).toUpperCase());
+  const cover = community.cover ? `<img src="${escapeHTML(community.cover)}" alt="">` : '';
+  const navItems = ['Dashboard', 'Layouts', 'Invite', 'General', 'Subscriptions', 'Categories', 'Tabs', 'Plugins', 'Metrics', 'Gamification', 'Discovery', 'Links', 'Billing & referrals'];
+
+  return `
+    <section class="community-settings-card" role="dialog" aria-modal="true" aria-labelledby="community-settings-title" onclick="event.stopPropagation()">
+      <header class="community-settings-header">
+        <div class="community-settings-brand"><span class="community-settings-avatar">${initialsText}</span><div><strong id="community-settings-title">${title}</strong><span>Group settings</span></div></div>
+        <button class="community-settings-close" data-action="close-modal" aria-label="Close">&times;</button>
+      </header>
+      <div class="community-settings-layout">
+        <nav class="community-settings-nav" aria-label="Group settings sections">
+          ${navItems.map((item) => `<button type="button" class="community-settings-nav-item${item === 'General' ? ' active' : ''}"${item === 'General' ? '' : ' disabled'}>${item}</button>`).join('')}
+        </nav>
+        <form class="community-settings-content" id="communitySettingsForm">
+          <div class="community-settings-media-row">
+            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Icon</strong><span>Recommended:<br>128x128</span></div><label class="community-settings-upload community-settings-icon-upload">${community.creatorAvatar ? `<img src="${escapeHTML(community.creatorAvatar)}" alt="">` : addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload group icon"></label><button type="button" class="community-settings-change" data-action="community-upload-icon">CHANGE</button></div>
+            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Cover</strong><span>Recommended:<br>1084x576</span></div><label class="community-settings-upload community-settings-cover-upload">${cover || addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload cover image"></label><button type="button" class="community-settings-change" data-action="community-upload-cover">CHANGE</button></div>
+          </div>
+          <div class="community-settings-fields">
+            <div class="community-settings-field"><label for="communitySettingsName">Group name</label><input id="communitySettingsName" name="title" class="skool-input" value="${title}" maxlength="30" required><span class="community-settings-counter">${community.title.length}/30</span></div>
+            <div class="community-settings-field is-disabled"><label for="communitySettingsUrl">URL</label><input id="communitySettingsUrl" class="skool-input" value="skool.com/${escapeHTML(community.slug || '')}" disabled><p>You can change your URL with a paid account. <a href="#upgrade">Upgrade now?</a></p></div>
+            <div class="community-settings-field"><label for="communitySettingsDescription">Group description</label><textarea id="communitySettingsDescription" name="description" class="skool-textarea" maxlength="150" placeholder="Tell members what this group is about">${description}</textarea><span class="community-settings-counter">${(community.description || '').length}/150</span></div>
+            <div class="community-settings-inline-fields"><div class="community-settings-field"><label for="communitySettingsInitials">Initials</label><input id="communitySettingsInitials" name="initials" class="skool-input" value="${initialsText}" maxlength="2"></div><div class="community-settings-field"><label for="communitySettingsColor">Color</label><input id="communitySettingsColor" name="color" class="skool-input community-settings-color-input" value="${escapeHTML(community.accent || '#3d5ba9')}"></div></div>
+            <fieldset class="community-settings-privacy"><legend>Who can see this group?</legend><label><input type="radio" name="accessType" value="Private"${community.accessType !== 'Public' ? ' checked' : ''}><span><strong>Private</strong><small>Only members can see who is in the group and what they post.</small></span></label><label><input type="radio" name="accessType" value="Public"${community.accessType === 'Public' ? ' checked' : ''}><span><strong>Public</strong><small>Anyone can see who is in the group and what they post.</small></span></label></fieldset>
+            <button type="submit" class="settings-submit-gold-btn">SAVE CHANGES</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  `;
+}
+
 function modalCardContent() {
   if (state.modal === 'plan') {
     return planModalContent();
+  }
+  if (state.modal === 'community-settings') {
+    return communitySettingsModalContent();
   }
   const mode = state.authMode;
   if (mode === 'sent') return `<section class="login-modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><button class="modal-close" data-action="close-modal">&times;</button><h2 class="login-modal-title">Please check your email</h2><p class="auth-copy" style="color:#d4d4d4; text-align:center;">We sent you an email, which contains a link to reset your SkillSpace password.</p><button class="SkillSpace-btn-primary" data-auth="login">BACK TO LOGIN</button></section>`;
@@ -1234,7 +1287,8 @@ function modalCardContent() {
 
 function modal() {
   if (!state.modal) return '';
-  return `<div class="modal-backdrop">${modalCardContent()}</div>`;
+  const modalClass = state.modal === 'community-settings' ? ' modal-backdrop-community-settings' : '';
+  return `<div class="modal-backdrop${modalClass}">${modalCardContent()}</div>`;
 }
 
 function mountAuthModal() {
@@ -1305,6 +1359,25 @@ function bindAuth() {
   backdrop.onclick = (event) => {
     if (event.target === backdrop) closeAuthModal();
   };
+
+  const communitySettingsForm = document.querySelector('#communitySettingsForm');
+  if (communitySettingsForm) {
+    communitySettingsForm.onsubmit = (event) => {
+      event.preventDefault();
+      const activeCommunity = communities.find((item) => item.id === state.selected) || communities[0];
+      const data = Object.fromEntries(new FormData(communitySettingsForm));
+      if (!activeCommunity) return;
+      Object.assign(activeCommunity, { title: data.title.trim(), description: data.description.trim(), accessType: data.accessType, accent: data.color.trim() || activeCommunity.accent });
+      store.updateCommunity(activeCommunity);
+      closeAuthModal();
+      render();
+      showToast('Group settings saved');
+    };
+    communitySettingsForm.querySelectorAll('textarea, input[name="title"]').forEach((field) => field.addEventListener('input', (event) => {
+      const counter = event.target.parentElement.querySelector('.community-settings-counter');
+      if (counter) counter.textContent = `${event.target.value.length}/${event.target.maxLength}`;
+    }));
+  }
 
   const forgotForm = document.querySelector('#forgotForm');
   if (forgotForm) {
@@ -1411,7 +1484,7 @@ function bindAuth() {
         priceType: 'Free',
         accessType: 'Private',
         category: 'Trending',
-        cover: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=85',
+        cover: '',
         creatorName: user.name || 'Creator',
         creatorAvatar: user.pfp || ''
       };
@@ -1631,6 +1704,9 @@ function actions(action, element) {
     state.modal = store.user ? 'plan' : 'auth';
     if (!store.user) state.authMode = 'login';
     mountAuthModal();
+  } else if (action === 'community-settings') {
+    state.modal = 'community-settings';
+    mountAuthModal();
   } else if (action === 'login' || action === 'register') {
     state.authMode = action;
     state.modal = 'auth';
@@ -1757,6 +1833,9 @@ function actions(action, element) {
       'add-payment-method': 'Payment modal ready'
     };
     showToast(messages[action] || 'Action triggered');
+  } else if (action === 'community-upload-icon' || action === 'community-upload-cover') {
+    const selector = action === 'community-upload-icon' ? '.community-settings-icon-upload input' : '.community-settings-cover-upload input';
+    document.querySelector(selector)?.click();
   }
 }
 restoreSession();
