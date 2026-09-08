@@ -2,7 +2,7 @@ import './styles.css';
 import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 
-const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], planBilling: 'monthly', selectedPlan: null };
+const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], profileCommunityView: 'memberships', planBilling: 'monthly', selectedPlan: null };
 store.communities.forEach((community) => {
   const savedCommunity = String(community.id).startsWith('created-') ? { ...community, cover: '', creatorAvatar: '' } : community;
   if (!String(savedCommunity.id).startsWith('created-') || String(savedCommunity.ownerId) === String(store.user?.id)) {
@@ -537,6 +537,10 @@ function profileView() {
     ? new Date(user.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : 'Aug 15, 2026';
   const userInitial = initials(user);
+  const profileCommunities = state.profileCommunityView === 'created'
+    ? communities.filter((community) => String(community.id).startsWith('created-') && String(community.ownerId) === String(store.user?.id))
+    : (state.joinedCommunities || []).map((id) => communities.find((community) => community.id === id)).filter(Boolean).filter(isVisibleCommunity);
+  const profileCommunityLabel = state.profileCommunityView === 'created' ? 'My communities' : 'Memberships';
 
   return `
     <main class="profile-page-container">
@@ -581,10 +585,14 @@ function profileView() {
 
           <!-- Memberships Section -->
           <div class="profile-section-card">
-            <h2 class="profile-section-title">Memberships</h2>
-            <div class="empty-state-box">
-              <p class="text-secondary" style="margin:0; font-size:14px;">No memberships yet. Join a community to get started!</p>
+            <div class="profile-community-heading">
+              <h2 class="profile-section-title">${profileCommunityLabel}</h2>
+              <div class="profile-community-toggle" role="tablist" aria-label="Community view">
+                <button type="button" class="profile-community-toggle-btn${state.profileCommunityView === 'memberships' ? ' active' : ''}" data-action="toggle-profile-community" data-community-view="memberships" role="tab" aria-selected="${state.profileCommunityView === 'memberships'}">Memberships</button>
+                <button type="button" class="profile-community-toggle-btn${state.profileCommunityView === 'created' ? ' active' : ''}" data-action="toggle-profile-community" data-community-view="created" role="tab" aria-selected="${state.profileCommunityView === 'created'}">My communities</button>
+              </div>
             </div>
+            ${profileCommunities.length ? `<div class="profile-community-grid">${profileCommunities.map((community, index) => card(community, index)).join('')}</div>` : `<div class="empty-state-box"><p class="text-secondary" style="margin:0; font-size:14px;">${state.profileCommunityView === 'created' ? 'You have not created any communities yet.' : 'No memberships yet. Join a community to get started!'}</p></div>`}
           </div>
 
           <!-- Contributions Section -->
@@ -1579,7 +1587,7 @@ function bind() {
     });
   }
 
-  document.querySelector('[data-community]')?.parentElement.addEventListener('click', (event) => { const cardElement = event.target.closest('[data-community]'); if (cardElement && !event.target.closest('button')) { state.selected = Number(cardElement.dataset.community); state.view = 'detail'; render(); } });
+  document.querySelector('[data-community]')?.parentElement.addEventListener('click', (event) => { const cardElement = event.target.closest('[data-community]'); if (cardElement && !event.target.closest('button')) { state.selected = /^\d+$/.test(cardElement.dataset.community) ? Number(cardElement.dataset.community) : cardElement.dataset.community; state.view = 'detail'; render(); } });
   document.querySelector('#postForm')?.addEventListener('submit', (event) => { event.preventDefault(); const text = new FormData(event.target).get('text'); store.addPost({ communityId: state.selected, name: store.user.name, role: 'Member', text, time: 'now' }); render(); showToast('Post published'); });
   
   document.querySelector('#profileSettingsForm')?.addEventListener('submit', (event) => {
@@ -1709,6 +1717,9 @@ function actions(action, element) {
     render();
   } else if (action === 'toggle-plan-billing') {
     state.planBilling = element?.dataset.billing || 'monthly';
+    render();
+  } else if (action === 'toggle-profile-community') {
+    state.profileCommunityView = element?.dataset.communityView || 'memberships';
     render();
   } else if (action === 'select-plan') {
     const selectedPlan = element?.dataset.plan || 'Pro';
