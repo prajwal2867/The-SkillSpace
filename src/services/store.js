@@ -18,5 +18,5 @@ export const store = {
   addPost(post) { localStorage.setItem(POSTS_KEY, JSON.stringify([post, ...this.posts])); },
   get communities() { return JSON.parse(localStorage.getItem(COMMUNITIES_KEY) || '[]'); },
   saveCommunity(community) { localStorage.setItem(COMMUNITIES_KEY, JSON.stringify([...this.communities, community])); },
-  updateCommunity(community) { localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(this.communities.map((item) => item.id === community.id ? community : item))); }
+  updateCommunity(community, ownerId = this.user?.id) { localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(this.communities.map((item) => item.id === community.id && String(item.ownerId) === String(ownerId) ? community : item))); }
 };

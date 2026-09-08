@@ -5,7 +5,9 @@ import { store } from './services/store.js';
 const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], planBilling: 'monthly', selectedPlan: null };
 store.communities.forEach((community) => {
   const savedCommunity = String(community.id).startsWith('created-') ? { ...community, cover: '', creatorAvatar: '' } : community;
-  if (!communities.some((item) => item.id === savedCommunity.id)) communities.push(savedCommunity);
+  if (!String(savedCommunity.id).startsWith('created-') || String(savedCommunity.ownerId) === String(store.user?.id)) {
+    if (!communities.some((item) => item.id === savedCommunity.id)) communities.push(savedCommunity);
+  }
 });
 const icon = (name) => ({
   search: '⌕',
@@ -17,10 +19,18 @@ const icon = (name) => ({
 const initials = (user = store.user) => (user?.name || user?.email || 'U').slice(0, 1).toUpperCase();
 const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const addImageIcon = (className = '') => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path></svg>`;
+const isVisibleCommunity = (community) => !String(community.id).startsWith('created-') || String(community.ownerId) === String(store.user?.id);
+function syncOwnedCommunities() {
+  store.communities.forEach((community) => {
+    if (String(community.id).startsWith('created-') && String(community.ownerId) === String(store.user?.id) && !communities.some((item) => item.id === community.id)) {
+      communities.push({ ...community, cover: '', creatorAvatar: '' });
+    }
+  });
+}
 
 function filteredCommunities() {
   const query = state.submittedQuery.toLowerCase();
-  const result = communities.filter((community) => (!query || `${community.title} ${community.description} ${community.category}`.toLowerCase().includes(query)) && (state.category === 'Trending' || community.category === state.category) && (state.price === 'All' || community.priceType === state.price) && (state.access === 'All' || community.accessType === state.access));
+  const result = communities.filter(isVisibleCommunity).filter((community) => (!query || `${community.title} ${community.description} ${community.category}`.toLowerCase().includes(query)) && (state.category === 'Trending' || community.category === state.category) && (state.price === 'All' || community.priceType === state.price) && (state.access === 'All' || community.accessType === state.access));
   if (state.sort === 'Top') result.sort((a, b) => parseFloat(b.members) - parseFloat(a.members));
   return result;
 }
@@ -85,7 +95,7 @@ function header() {
           </button>
         </div>
         <div class="brand-community-list" id="brandCommunityList">
-          ${(state.joinedCommunities || []).length > 0 ? (state.joinedCommunities.map(id => communities.find(c => c.id === id)).filter(Boolean)).map(comm => `
+          ${(state.joinedCommunities || []).length > 0 ? (state.joinedCommunities.map(id => communities.find(c => c.id === id)).filter(Boolean).filter(isVisibleCommunity)).map(comm => `
             <div class="brand-community-item" data-action="select-community" data-id="${comm.id}">
               ${comm.cover ? `<img src="${comm.cover}" class="brand-comm-avatar" alt="${escapeHTML(comm.title)}">` : `<span class="brand-comm-avatar brand-comm-avatar-placeholder">${addImageIcon()}</span>`}
               <span class="brand-comm-title">${escapeHTML(comm.title)}</span>
@@ -1364,11 +1374,11 @@ function bindAuth() {
   if (communitySettingsForm) {
     communitySettingsForm.onsubmit = (event) => {
       event.preventDefault();
-      const activeCommunity = communities.find((item) => item.id === state.selected) || communities[0];
+      const activeCommunity = communities.find((item) => item.id === state.selected && isVisibleCommunity(item));
       const data = Object.fromEntries(new FormData(communitySettingsForm));
       if (!activeCommunity) return;
       Object.assign(activeCommunity, { title: data.title.trim(), description: data.description.trim(), accessType: data.accessType, accent: data.color.trim() || activeCommunity.accent });
-      store.updateCommunity(activeCommunity);
+      store.updateCommunity(activeCommunity, store.user?.id);
       closeAuthModal();
       render();
       showToast('Group settings saved');
@@ -1414,6 +1424,7 @@ function bindAuth() {
       const user = findAuthUser(email, passwordHash) || store.findUser(email);
       if (!user || user.passwordHash !== passwordHash) return setAuthMessage('Invalid email or password.');
       store.saveSession(user);
+      syncOwnedCommunities();
       refreshHeader();
       if (state.selectedPlan) {
         state.modal = 'plan';
@@ -1474,6 +1485,7 @@ function bindAuth() {
       const user = store.user || { name: 'Creator' };
       const community = {
         id: `created-${crypto.randomUUID()}`,
+        ownerId: user.id,
         title: name,
         slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
         description: 'A private community for creators.',
@@ -1749,6 +1761,8 @@ function actions(action, element) {
     const menu = document.querySelector('#userProfileMenu');
     if (menu) menu.classList.remove('active');
     state.profileMenu = false;
+    state.joinedCommunities = [];
+    state.selected = null;
     state.view = 'discover';
     render();
   } else if (action === 'join') {
