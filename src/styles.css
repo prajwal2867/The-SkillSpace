@@ -1020,6 +1020,8 @@ body.theme-dark .topbar-search-form {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: 320px 380px;
   transition: all 0.2s;
   cursor: pointer;
 }
@@ -3120,18 +3122,16 @@ body.theme-dark .profile-community-toggle {
 }
 
 .community-cropper-header { border-bottom: 1px solid var(--border); }
-.community-cropper-header h2 { margin-top: 2px; color: var(--text-primary); font-size: 21px; line-height: 1.25; }
-.community-cropper-kicker { color: var(--primary); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
-.community-cropper-body { padding: 24px; }
+.community-cropper-header h2 { color: var(--text-primary); font-size: 21px; line-height: 1.25; }
+.community-cropper-body { padding: 22px 24px 20px; }
 .community-cropper-viewport { position: relative; width: 100%; aspect-ratio: 1084 / 576; overflow: hidden; border-radius: var(--radius-md); background: #111827; cursor: grab; touch-action: none; }
 .community-cropper-viewport.is-icon { width: min(100%, 420px); margin: 0 auto; aspect-ratio: 1; border-radius: 18px; }
 .community-cropper-viewport:active { cursor: grabbing; }
 .community-cropper-viewport::after { position: absolute; inset: 0; border: 1px solid rgba(255, 255, 255, .35); border-radius: inherit; content: ''; pointer-events: none; }
 .community-cropper-viewport img { position: absolute; top: 0; left: 0; max-width: none; user-select: none; pointer-events: none; transform-origin: top left; }
-.community-cropper-controls { display: flex; align-items: center; gap: 12px; margin-top: 20px; color: var(--text-secondary); font-size: 13px; font-weight: 700; }
+.community-cropper-controls { display: flex; align-items: center; gap: 12px; margin-top: 16px; color: var(--text-secondary); font-size: 13px; font-weight: 700; }
 .community-cropper-controls input { flex: 1; accent-color: var(--primary); }
 .community-cropper-controls span { width: 44px; color: var(--text-muted); text-align: right; font-variant-numeric: tabular-nums; }
-.community-cropper-help { margin-top: 10px; color: var(--text-muted); font-size: 12px; }
 .community-cropper-footer { justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); }
 .community-cropper-cancel { padding: 10px 16px; color: var(--text-secondary); font-size: 12px; font-weight: 700; }
 .community-cropper-cancel:hover { color: var(--text-primary); }
@@ -3143,7 +3143,7 @@ body.theme-dark .profile-community-toggle {
   .community-settings-nav-item { flex: 0 0 auto; width: auto; white-space: nowrap; }
   .community-settings-content { padding: 24px 20px; }
   .community-settings-media-row { grid-template-columns: 1fr; gap: 22px; }
-  .community-cropper-body { padding: 18px; }
+  .community-cropper-body { padding: 18px 18px 16px; }
 }
 
 @media (max-width: 520px) {

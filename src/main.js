@@ -220,7 +220,7 @@ function creatorCommunityView() {
 }
 
 function card(community, index) {
-  const image = community.cover ? `<img src="${community.cover}" alt="${escapeHTML(community.title)} cover">` : addImageIcon('card-add-image-icon');
+  const image = community.cover ? `<img src="${community.cover}" alt="${escapeHTML(community.title)} cover" loading="lazy" decoding="async">` : addImageIcon('card-add-image-icon');
   return `<article class="community-card" style="--accent:${community.accent};--delay:${index * 45}ms" data-community="${community.id}"><div class="card-image">${image}<span class="card-tag">${community.tag}</span></div><div class="card-body"><div class="eyebrow">${community.category} <span>·</span> ${community.accessType === 'Private' ? icon('lock') + ' Private' : 'Open access'}</div><h2>${escapeHTML(community.title)}</h2><p>${escapeHTML(community.description)}</p><footer><span><strong>${community.members}</strong> members</span><span class="price">${community.price}</span></footer></div></article>`;
 }
 
@@ -281,7 +281,7 @@ function createCommunityView() {
 
                 return `
                   <div class="carousel-card-item ${posClass}" data-slide-index="${idx}">
-                    <img src="${cardItem.image}" alt="${escapeHTML(cardItem.title)}" class="carousel-card-img">
+                    <img src="${cardItem.image}" alt="${escapeHTML(cardItem.title)}" class="carousel-card-img" loading="lazy" decoding="async">
                     <div class="carousel-card-badge">
                       <div class="badge-title">${escapeHTML(cardItem.badgeText)}</div>
                       <div class="badge-sub">${escapeHTML(cardItem.earnings)}</div>
@@ -369,7 +369,7 @@ function detailView() {
             ${galleryImages.map((img, idx) => `
               <button class="media-thumb-item ${state.selectedMediaIndex === idx ? 'active' : ''}" data-action="select-media-thumb" data-index="${idx}">
                 ${idx === 0 ? `<div class="thumb-play-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>` : ''}
-                <img src="${img}" alt="Thumbnail ${idx + 1}">
+                <img src="${img}" alt="Thumbnail ${idx + 1}" loading="lazy" decoding="async">
               </button>
             `).join('')}
           </div>` : ''}
@@ -1326,11 +1326,10 @@ function communityCropperModalContent() {
   const ratio = isIcon ? '1 / 1' : '1084 / 576';
   return `
     <section class="community-cropper-card" role="dialog" aria-modal="true" aria-labelledby="community-cropper-title" onclick="event.stopPropagation()">
-      <header class="community-cropper-header"><div><span class="community-cropper-kicker">GROUP SETTINGS</span><h2 id="community-cropper-title">${title}</h2></div><button class="community-settings-close" data-action="close-modal" aria-label="Close">&times;</button></header>
+      <header class="community-cropper-header"><h2 id="community-cropper-title">${title}</h2><button class="community-settings-close" data-action="close-modal" aria-label="Close">&times;</button></header>
       <div class="community-cropper-body">
         <div class="community-cropper-viewport ${isIcon ? 'is-icon' : ''}" data-ratio="${ratio}"><img id="communityCropImage" src="${escapeHTML(state.cropper?.src || '')}" alt="Selected ${isIcon ? 'icon' : 'cover'} preview"></div>
         <div class="community-cropper-controls"><label for="communityCropZoom">Zoom</label><input id="communityCropZoom" type="range" min="1" max="3" step="0.01" value="1" aria-label="Zoom image"><span id="communityCropZoomValue">100%</span></div>
-        <p class="community-cropper-help">Drag the image to choose what appears in the ${isIcon ? 'icon' : 'cover'}.</p>
       </div>
       <footer class="community-cropper-footer"><button type="button" class="community-cropper-cancel" data-action="close-modal">CANCEL</button><button type="button" class="settings-submit-gold-btn community-cropper-save" data-action="save-community-crop">SAVE</button></footer>
     </section>
@@ -1597,20 +1596,22 @@ function bindCommunityCropper(backdrop) {
   const zoom = backdrop.querySelector('#communityCropZoom');
   const zoomValue = backdrop.querySelector('#communityCropZoomValue');
   if (!viewport || !image || !zoom) return;
-  const crop = { zoom: 1, offsetX: 0, offsetY: 0, dragging: false, startX: 0, startY: 0 };
+  const crop = { zoom: 1, offsetX: 0, offsetY: 0, dragging: false, startX: 0, startY: 0, frame: 0 };
+  let viewportRect = viewport.getBoundingClientRect();
+  let imageScale = 1;
+  let imageWidth = 0;
+  let imageHeight = 0;
+  const updateMetrics = () => {
+    viewportRect = viewport.getBoundingClientRect();
+    imageScale = Math.max(viewportRect.width / image.naturalWidth, viewportRect.height / image.naturalHeight) * crop.zoom;
+    imageWidth = image.naturalWidth * imageScale;
+    imageHeight = image.naturalHeight * imageScale;
+  };
   const clampOffsets = () => {
-    const viewportRect = viewport.getBoundingClientRect();
-    const imageScale = Math.max(viewportRect.width / image.naturalWidth, viewportRect.height / image.naturalHeight) * crop.zoom;
-    const imageWidth = image.naturalWidth * imageScale;
-    const imageHeight = image.naturalHeight * imageScale;
     crop.offsetX = Math.max(viewportRect.width - imageWidth, Math.min(0, crop.offsetX));
     crop.offsetY = Math.max(viewportRect.height - imageHeight, Math.min(0, crop.offsetY));
   };
   const draw = () => {
-    const viewportRect = viewport.getBoundingClientRect();
-    const imageScale = Math.max(viewportRect.width / image.naturalWidth, viewportRect.height / image.naturalHeight) * crop.zoom;
-    const imageWidth = image.naturalWidth * imageScale;
-    const imageHeight = image.naturalHeight * imageScale;
     const left = (viewportRect.width - imageWidth) / 2 + crop.offsetX;
     const top = (viewportRect.height - imageHeight) / 2 + crop.offsetY;
     image.style.width = `${imageWidth}px`;
@@ -1618,13 +1619,18 @@ function bindCommunityCropper(backdrop) {
     image.style.transform = `translate(${left}px, ${top}px)`;
     zoomValue.textContent = `${Math.round(crop.zoom * 100)}%`;
   };
-  image.onload = () => { clampOffsets(); draw(); };
-  zoom.oninput = () => { crop.zoom = Number(zoom.value); clampOffsets(); draw(); };
+  const scheduleDraw = () => {
+    if (crop.frame) return;
+    crop.frame = requestAnimationFrame(() => { crop.frame = 0; clampOffsets(); draw(); });
+  };
+  image.onload = () => { updateMetrics(); scheduleDraw(); };
+  zoom.oninput = () => { crop.zoom = Number(zoom.value); updateMetrics(); scheduleDraw(); };
   viewport.onpointerdown = (event) => { crop.dragging = true; crop.startX = event.clientX - crop.offsetX; crop.startY = event.clientY - crop.offsetY; viewport.setPointerCapture(event.pointerId); };
-  viewport.onpointermove = (event) => { if (!crop.dragging) return; crop.offsetX = event.clientX - crop.startX; crop.offsetY = event.clientY - crop.startY; clampOffsets(); draw(); };
+  viewport.onpointermove = (event) => { if (!crop.dragging) return; crop.offsetX = event.clientX - crop.startX; crop.offsetY = event.clientY - crop.startY; scheduleDraw(); };
   viewport.onpointerup = () => { crop.dragging = false; };
   viewport.onpointercancel = () => { crop.dragging = false; };
-  if (image.complete) { clampOffsets(); draw(); }
+  window.addEventListener('resize', () => { updateMetrics(); scheduleDraw(); }, { passive: true, once: true });
+  if (image.complete) { updateMetrics(); scheduleDraw(); }
   backdrop.querySelector('[data-action="save-community-crop"]')?.addEventListener('click', () => {
     const viewportRect = viewport.getBoundingClientRect();
     const imageScale = Math.max(viewportRect.width / image.naturalWidth, viewportRect.height / image.naturalHeight) * crop.zoom;
