@@ -106,12 +106,12 @@
       </div>
       ${c}
     </header>
-  `}function C(){let e=r.find(e=>e.id===f.selected)||r[0],t=String(e.id).startsWith(`created-`),n=d.user||{name:`Creator`},i=n.pfp||e.creatorAvatar;return`
+  `}function C(){let e=r.find(e=>e.id===f.selected)||r[0],t=String(e.id).startsWith(`created-`),n=!!(e.description&&e.description!==`A private community for creators.`),i=!!e.cover,a=[n,i].filter(Boolean).length,o=d.user||{name:`Creator`},s=o.pfp||e.creatorAvatar;return`
     <main class="creator-community-page">
       <div class="creator-community-layout">
         <section class="creator-community-main">
           <div class="creator-composer" data-action="create-post">
-            ${i?`<img src="${i}" alt="${h(n.name)}" class="creator-avatar">`:`<span class="creator-avatar creator-avatar-fallback">${m(n)}</span>`}
+            ${s?`<img src="${s}" alt="${h(o.name)}" class="creator-avatar">`:`<span class="creator-avatar creator-avatar-fallback">${m(o)}</span>`}
             <span>Write something</span>
           </div>
           <div class="creator-feed-toolbar">
@@ -120,10 +120,10 @@
             <button class="creator-settings-button" aria-label="Filter posts">☷</button>
           </div>
           <section class="setup-card">
-            <div class="setup-card-heading"><span class="setup-progress" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
+            <div class="setup-card-heading"><span class="setup-progress ${a?`has-progress`:``}" style="--setup-progress:${a*25}%" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#invite-people">Invite 3 people</a></div>
-            <div class="setup-item"><span class="setup-circle"></span><a href="#group-description" data-action="community-settings">Add group description</a></div>
-            <div class="setup-item"><span class="setup-circle"></span><a href="#cover-image">Set cover image</a></div>
+            <div class="setup-item ${n?`is-complete`:``}"><span class="setup-circle">${n?`✓`:``}</span><a href="#group-description" data-action="community-settings">Add group description</a></div>
+            <div class="setup-item ${i?`is-complete`:``}"><span class="setup-circle">${i?`✓`:``}</span><a href="#cover-image" data-action="community-settings">Set cover image</a></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#first-post">Write your first post</a></div>
           </section>
         </section>

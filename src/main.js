@@ -168,6 +168,9 @@ function header() {
 function creatorCommunityView() {
   const community = communities.find((item) => item.id === state.selected) || communities[0];
   const isCreatedCommunity = String(community.id).startsWith('created-');
+  const hasDescription = Boolean(community.description && community.description !== 'A private community for creators.');
+  const hasCover = Boolean(community.cover);
+  const completedSetupItems = [hasDescription, hasCover].filter(Boolean).length;
   const user = store.user || { name: 'Creator' };
   const userAvatar = user.pfp || community.creatorAvatar;
   return `
@@ -184,10 +187,10 @@ function creatorCommunityView() {
             <button class="creator-settings-button" aria-label="Filter posts">☷</button>
           </div>
           <section class="setup-card">
-            <div class="setup-card-heading"><span class="setup-progress" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
+            <div class="setup-card-heading"><span class="setup-progress ${completedSetupItems ? 'has-progress' : ''}" style="--setup-progress:${completedSetupItems * 25}%" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#invite-people">Invite 3 people</a></div>
-            <div class="setup-item"><span class="setup-circle"></span><a href="#group-description" data-action="community-settings">Add group description</a></div>
-            <div class="setup-item"><span class="setup-circle"></span><a href="#cover-image">Set cover image</a></div>
+            <div class="setup-item ${hasDescription ? 'is-complete' : ''}"><span class="setup-circle">${hasDescription ? '✓' : ''}</span><a href="#group-description" data-action="community-settings">Add group description</a></div>
+            <div class="setup-item ${hasCover ? 'is-complete' : ''}"><span class="setup-circle">${hasCover ? '✓' : ''}</span><a href="#cover-image" data-action="community-settings">Set cover image</a></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#first-post">Write your first post</a></div>
           </section>
         </section>
