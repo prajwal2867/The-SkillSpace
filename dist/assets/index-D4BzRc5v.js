@@ -106,12 +106,12 @@
       </div>
       ${c}
     </header>
-  `}function C(){let e=r.find(e=>e.id===f.selected)||r[0],t=d.user||{name:`Creator`},n=t.pfp||e.creatorAvatar;return`
+  `}function C(){let e=r.find(e=>e.id===f.selected)||r[0],t=String(e.id).startsWith(`created-`),n=d.user||{name:`Creator`},i=n.pfp||e.creatorAvatar;return`
     <main class="creator-community-page">
       <div class="creator-community-layout">
         <section class="creator-community-main">
           <div class="creator-composer" data-action="create-post">
-            ${n?`<img src="${n}" alt="${h(t.name)}" class="creator-avatar">`:`<span class="creator-avatar creator-avatar-fallback">${m(t)}</span>`}
+            ${i?`<img src="${i}" alt="${h(n.name)}" class="creator-avatar">`:`<span class="creator-avatar creator-avatar-fallback">${m(n)}</span>`}
             <span>Write something</span>
           </div>
           <div class="creator-feed-toolbar">
@@ -136,7 +136,7 @@
               <p class="creator-private-label">♙ ${h(e.accessType||`Private`)} group</p>
               <p class="creator-group-description">${h(e.description||`Add your group description here by clicking the “Settings” button.`)}</p>
               <div class="creator-stat-row"><div><strong>1</strong><span>Members</span></div><div><strong>0</strong><span>Online</span></div><div><strong>1</strong><span>Admins</span></div></div>
-              <div class="creator-avatar-stack">
+              ${t?``:`<div class="creator-avatar-stack">
                 <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="">
@@ -144,7 +144,7 @@
                 <img src="https://randomuser.me/api/portraits/women/24.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
-              </div>
+              </div>`}
               <button class="creator-settings-cta" type="button" data-action="community-settings">SETTINGS</button>
             </div>
           </div>
@@ -199,7 +199,7 @@
         </div>
       </section>
     </main>
-  `}function O(){let e=document.querySelector(`.community-grid`);if(!e)return;let t=x();e.innerHTML=t.length?t.map(w).join(``):`<div class="empty"><strong>No communities found.</strong><p>Try a broader search or reset your filters.</p><button class="outline-button" data-action="reset">Reset filters</button></div>`,e.querySelectorAll(`[data-action]`).forEach(e=>e.addEventListener(`click`,()=>Q(e.dataset.action)))}function k(){let e=r.find(e=>e.id===f.selected)||r[0],t=(f.joinedCommunities||[]).includes(e.id),n=[e.cover,`https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80`,`https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80`,`https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80`,`https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80`],i=n[f.selectedMediaIndex]||n[0],a={globe:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"></path></svg>`,users:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,tag:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`,user:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`};return`
+  `}function O(){let e=document.querySelector(`.community-grid`);if(!e)return;let t=x();e.innerHTML=t.length?t.map(w).join(``):`<div class="empty"><strong>No communities found.</strong><p>Try a broader search or reset your filters.</p><button class="outline-button" data-action="reset">Reset filters</button></div>`,e.querySelectorAll(`[data-action]`).forEach(e=>e.addEventListener(`click`,()=>Q(e.dataset.action)))}function k(){let e=r.find(e=>e.id===f.selected)||r[0],t=(f.joinedCommunities||[]).includes(e.id),n=String(e.id).startsWith(`created-`),i=n?[]:[e.cover,`https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80`,`https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80`,`https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80`,`https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80`].filter(Boolean),a=i[f.selectedMediaIndex]||i[0],o=Number.isFinite(Number(e.rating))&&Number(e.reviewCount||0)>0,s=Array.isArray(e.reviews)&&e.reviews.length>0,c=!!a,l={globe:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"></path></svg>`,users:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,tag:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`,user:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`};return`
     <main class="skool-about-page">
       <div class="skool-about-layout">
         <!-- Left Main Content Column -->
@@ -207,48 +207,38 @@
           <!-- Community Header Block -->
           <div class="about-title-block">
             <h1 class="about-community-heading">${h(e.title)}</h1>
-            <div class="about-star-rating-row">
-              <span class="star-gold">★ ★ ★ ★ ★</span>
-              <span class="rating-val">${e.rating||`5.0`}</span>
-              <span class="review-count-text">· ${e.reviewCount||93} reviews</span>
-            </div>
+            ${o?`<div class="about-star-rating-row"><span class="star-gold">★ ★ ★ ★ ★</span><span class="rating-val">${e.rating}</span><span class="review-count-text">· ${e.reviewCount} reviews</span></div>`:``}
           </div>
 
           <!-- Video / Media Screen Container -->
-          <div class="media-screen-box">
-            <img src="${i}" class="media-screen-img" alt="${h(e.title)} presentation">
-            <div class="media-play-overlay">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-            <span class="media-timestamp-badge">4:52</span>
-          </div>
+          ${c?`<div class="media-screen-box"><img src="${h(a)}" class="media-screen-img" alt="${h(e.title)} presentation"><div class="media-play-overlay"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div><span class="media-timestamp-badge">4:52</span></div>`:`<div class="media-empty-state">${g(`media-empty-state-icon`)}<span>No community media yet</span></div>`}
 
           <!-- Media Thumbnails Selector Row -->
-          <div class="media-thumbs-row">
-            ${n.map((e,t)=>`
+          ${i.length?`<div class="media-thumbs-row">
+            ${i.map((e,t)=>`
               <button class="media-thumb-item ${f.selectedMediaIndex===t?`active`:``}" data-action="select-media-thumb" data-index="${t}">
                 ${t===0?`<div class="thumb-play-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>`:``}
                 <img src="${e}" alt="Thumbnail ${t+1}">
               </button>
             `).join(``)}
-          </div>
+          </div>`:``}
 
           <!-- Professional Meta Bar (No emojis) -->
           <div class="about-meta-bar">
             <div class="meta-item">
-              ${a.globe}
+              ${l.globe}
               <span>${h(e.accessType)}</span>
             </div>
             <div class="meta-item">
-              ${a.users}
+              ${l.users}
               <span>${h(e.members)} members</span>
             </div>
             <div class="meta-item">
-              ${a.tag}
+              ${l.tag}
               <span>${h(e.price)}</span>
             </div>
             <div class="meta-item">
-              ${a.user}
+              ${l.user}
               <span>By ${h(e.creatorName||`Creator`)}</span>
             </div>
           </div>
@@ -273,10 +263,7 @@
 
           <!-- Reviews Section -->
           <div class="about-reviews-container">
-            <div class="reviews-title-row">
-              <span class="star-gold-lg">★</span>
-              <h2>${e.rating||`5.0`} · ${e.reviewCount||93} reviews</h2>
-            </div>
+            ${o?`<div class="reviews-title-row"><span class="star-gold-lg">★</span><h2>${e.rating} · ${e.reviewCount} reviews</h2></div>`:`<div class="reviews-empty-state">No reviews yet</div>`}
 
             <div class="reviews-cards-list">
               ${(e.reviews||[]).map(e=>`
@@ -293,7 +280,7 @@
               `).join(``)}
             </div>
 
-            <button class="see-more-link" data-action="see-more-reviews">See more</button>
+            ${s?`<button class="see-more-link" data-action="see-more-reviews">See more</button>`:``}
           </div>
 
           <div class="about-footer-legal">
@@ -305,7 +292,7 @@
         <aside class="skool-about-sidebar">
           <div class="sticky-sidebar-card">
             <div class="sidebar-cover-header">
-              <img src="${e.cover}" alt="${h(e.title)} cover">
+              ${e.cover?`<img src="${h(e.cover)}" alt="${h(e.title)} cover">`:g(`sidebar-empty-cover-icon`)}
             </div>
 
             <div class="sidebar-card-content">
@@ -329,7 +316,7 @@
               </div>
 
               <!-- Avatar Stack -->
-              <div class="sidebar-avatar-stack">
+              ${n?``:`<div class="sidebar-avatar-stack">
                 <img src="https://randomuser.me/api/portraits/women/44.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/men/32.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/women/68.jpg" class="stack-avatar" alt="">
@@ -337,7 +324,7 @@
                 <img src="https://randomuser.me/api/portraits/women/24.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/men/22.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" class="stack-avatar" alt="">
-              </div>
+              </div>`}
 
               <!-- Prominent Join Group Button -->
               <button class="skool-join-button ${t?`joined`:``}" data-action="${t?`leave`:`join`}">

@@ -167,6 +167,7 @@ function header() {
 
 function creatorCommunityView() {
   const community = communities.find((item) => item.id === state.selected) || communities[0];
+  const isCreatedCommunity = String(community.id).startsWith('created-');
   const user = store.user || { name: 'Creator' };
   const userAvatar = user.pfp || community.creatorAvatar;
   return `
@@ -199,7 +200,7 @@ function creatorCommunityView() {
               <p class="creator-private-label">♙ ${escapeHTML(community.accessType || 'Private')} group</p>
               <p class="creator-group-description">${escapeHTML(community.description || 'Add your group description here by clicking the “Settings” button.')}</p>
               <div class="creator-stat-row"><div><strong>1</strong><span>Members</span></div><div><strong>0</strong><span>Online</span></div><div><strong>1</strong><span>Admins</span></div></div>
-              <div class="creator-avatar-stack">
+              ${!isCreatedCommunity ? `<div class="creator-avatar-stack">
                 <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="">
@@ -207,7 +208,7 @@ function creatorCommunityView() {
                 <img src="https://randomuser.me/api/portraits/women/24.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
-              </div>
+              </div>` : ''}
               <button class="creator-settings-cta" type="button" data-action="community-settings">SETTINGS</button>
             </div>
           </div>
@@ -327,14 +328,20 @@ function renderCommunityGrid() {
 function detailView() {
   const community = communities.find((item) => item.id === state.selected) || communities[0];
   const isJoined = (state.joinedCommunities || []).includes(community.id);
-  const galleryImages = [
-    community.cover,
-    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80'
-  ];
+  const isCreatedCommunity = String(community.id).startsWith('created-');
+  const galleryImages = isCreatedCommunity
+    ? []
+    : [
+        community.cover,
+        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80'
+      ].filter(Boolean);
   const currentMediaImage = galleryImages[state.selectedMediaIndex] || galleryImages[0];
+  const hasRating = Number.isFinite(Number(community.rating)) && Number(community.reviewCount || 0) > 0;
+  const hasReviews = Array.isArray(community.reviews) && community.reviews.length > 0;
+  const hasMedia = Boolean(currentMediaImage);
 
   const svgIcons = {
     globe: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"></path></svg>',
@@ -351,31 +358,21 @@ function detailView() {
           <!-- Community Header Block -->
           <div class="about-title-block">
             <h1 class="about-community-heading">${escapeHTML(community.title)}</h1>
-            <div class="about-star-rating-row">
-              <span class="star-gold">★ ★ ★ ★ ★</span>
-              <span class="rating-val">${community.rating || '5.0'}</span>
-              <span class="review-count-text">· ${community.reviewCount || 93} reviews</span>
-            </div>
+            ${hasRating ? `<div class="about-star-rating-row"><span class="star-gold">★ ★ ★ ★ ★</span><span class="rating-val">${community.rating}</span><span class="review-count-text">· ${community.reviewCount} reviews</span></div>` : ''}
           </div>
 
           <!-- Video / Media Screen Container -->
-          <div class="media-screen-box">
-            <img src="${currentMediaImage}" class="media-screen-img" alt="${escapeHTML(community.title)} presentation">
-            <div class="media-play-overlay">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-            <span class="media-timestamp-badge">4:52</span>
-          </div>
+          ${hasMedia ? `<div class="media-screen-box"><img src="${escapeHTML(currentMediaImage)}" class="media-screen-img" alt="${escapeHTML(community.title)} presentation"><div class="media-play-overlay"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div><span class="media-timestamp-badge">4:52</span></div>` : `<div class="media-empty-state">${addImageIcon('media-empty-state-icon')}<span>No community media yet</span></div>`}
 
           <!-- Media Thumbnails Selector Row -->
-          <div class="media-thumbs-row">
+          ${galleryImages.length ? `<div class="media-thumbs-row">
             ${galleryImages.map((img, idx) => `
               <button class="media-thumb-item ${state.selectedMediaIndex === idx ? 'active' : ''}" data-action="select-media-thumb" data-index="${idx}">
                 ${idx === 0 ? `<div class="thumb-play-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>` : ''}
                 <img src="${img}" alt="Thumbnail ${idx + 1}">
               </button>
             `).join('')}
-          </div>
+          </div>` : ''}
 
           <!-- Professional Meta Bar (No emojis) -->
           <div class="about-meta-bar">
@@ -417,10 +414,7 @@ function detailView() {
 
           <!-- Reviews Section -->
           <div class="about-reviews-container">
-            <div class="reviews-title-row">
-              <span class="star-gold-lg">★</span>
-              <h2>${community.rating || '5.0'} · ${community.reviewCount || 93} reviews</h2>
-            </div>
+            ${hasRating ? `<div class="reviews-title-row"><span class="star-gold-lg">★</span><h2>${community.rating} · ${community.reviewCount} reviews</h2></div>` : `<div class="reviews-empty-state">No reviews yet</div>`}
 
             <div class="reviews-cards-list">
               ${(community.reviews || []).map(r => `
@@ -437,7 +431,7 @@ function detailView() {
               `).join('')}
             </div>
 
-            <button class="see-more-link" data-action="see-more-reviews">See more</button>
+            ${hasReviews ? '<button class="see-more-link" data-action="see-more-reviews">See more</button>' : ''}
           </div>
 
           <div class="about-footer-legal">
@@ -449,7 +443,7 @@ function detailView() {
         <aside class="skool-about-sidebar">
           <div class="sticky-sidebar-card">
             <div class="sidebar-cover-header">
-              <img src="${community.cover}" alt="${escapeHTML(community.title)} cover">
+              ${community.cover ? `<img src="${escapeHTML(community.cover)}" alt="${escapeHTML(community.title)} cover">` : addImageIcon('sidebar-empty-cover-icon')}
             </div>
 
             <div class="sidebar-card-content">
@@ -473,7 +467,7 @@ function detailView() {
               </div>
 
               <!-- Avatar Stack -->
-              <div class="sidebar-avatar-stack">
+              ${!isCreatedCommunity ? `<div class="sidebar-avatar-stack">
                 <img src="https://randomuser.me/api/portraits/women/44.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/men/32.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/women/68.jpg" class="stack-avatar" alt="">
@@ -481,7 +475,7 @@ function detailView() {
                 <img src="https://randomuser.me/api/portraits/women/24.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/men/22.jpg" class="stack-avatar" alt="">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" class="stack-avatar" alt="">
-              </div>
+              </div>` : ''}
 
               <!-- Prominent Join Group Button -->
               <button class="skool-join-button ${isJoined ? 'joined' : ''}" data-action="${isJoined ? 'leave' : 'join'}">
