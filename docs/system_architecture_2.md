@@ -395,25 +395,25 @@ The database schema is modeled in PostgreSQL 16+ using strict constraints, index
 
 ```mermaid
 erDiagram
-    USERS ||--o{ USER_SESSIONS : has
-    USERS ||--o{ COMMUNITY_MEMBERSHIPS : holds
-    USERS ||--o{ USER_CONTRIBUTIONS : logs
-    COMMUNITIES ||--o{ COMMUNITY_MEMBERSHIPS : includes
-    COMMUNITIES ||--o{ MEMBERSHIP_PLANS : offers
-    COMMUNITIES ||--o{ COURSES : hosts
-    COMMUNITIES ||--o{ POSTS : contains
-    COURSES ||--o{ COURSE_MODULES : organizes
-    COURSE_MODULES ||--o{ LESSONS : contains
-    LESSONS ||--o{ LESSON_PROGRESS : tracks
-    USERS ||--o{ LESSON_PROGRESS : records
-    POSTS ||--o{ COMMENTS : receives
-    POSTS ||--o{ POST_REACTIONS : has
-    USERS ||--o{ POSTS : authors
-    USERS ||--o{ COMMENTS : writes
-    COMMUNITY_MEMBERSHIPS ||--o{ SUBSCRIPTIONS : billed_via
-    CONVERSATIONS ||--o{ CONVERSATION_PARTICIPANTS : includes
-    CONVERSATIONS ||--o{ DIRECT_MESSAGES : contains
-    USERS ||--o{ DIRECT_MESSAGES : sends
+    USERS ||--o{ USER_SESSIONS : "has"
+    USERS ||--o{ COMMUNITY_MEMBERSHIPS : "holds"
+    USERS ||--o{ USER_CONTRIBUTIONS : "logs"
+    COMMUNITIES ||--o{ COMMUNITY_MEMBERSHIPS : "includes"
+    COMMUNITIES ||--o{ MEMBERSHIP_PLANS : "offers"
+    COMMUNITIES ||--o{ COURSES : "hosts"
+    COMMUNITIES ||--o{ POSTS : "contains"
+    COURSES ||--o{ COURSE_MODULES : "organizes"
+    COURSE_MODULES ||--o{ LESSONS : "contains"
+    LESSONS ||--o{ LESSON_PROGRESS : "tracks"
+    USERS ||--o{ LESSON_PROGRESS : "records"
+    POSTS ||--o{ COMMENTS : "receives"
+    POSTS ||--o{ POST_REACTIONS : "has"
+    USERS ||--o{ POSTS : "authors"
+    USERS ||--o{ COMMENTS : "writes"
+    COMMUNITY_MEMBERSHIPS ||--o{ SUBSCRIPTIONS : "billed via"
+    CONVERSATIONS ||--o{ CONVERSATION_PARTICIPANTS : "includes"
+    CONVERSATIONS ||--o{ DIRECT_MESSAGES : "contains"
+    USERS ||--o{ DIRECT_MESSAGES : "sends"
 ```
 
 ### 6.1 Core PostgreSQL DDL Schema
