@@ -140,7 +140,7 @@ function header() {
       <div class="topbar-container">
         <div class="topbar-left-group">
           ${brandArea}
-          ${topSearch}
+          ${isDetail ? topSearch : ''}
         </div>
         <div class="top-actions">
           ${user ? `
@@ -534,7 +534,7 @@ function getContributionData(selectedGroup = 'All communities') {
 
     days.push({ dateStr, count, level });
   }
-  return { days, totalContributions };
+  return { days, totalContributions: 0 };
 }
 
 function profileView() {

@@ -81,7 +81,7 @@
       <div class="topbar-container">
         <div class="topbar-left-group">
           ${o}
-          ${i}
+          ${n?i:``}
         </div>
         <div class="top-actions">
           ${e?`
@@ -339,7 +339,7 @@
         </aside>
       </div>
     </main>
-  `}function A(e=`All communities`){let t=new Date(`2026-09-03T12:00:00Z`),n=[],r=0,i=0;for(let t=0;t<e.length;t++)i=(i*31+e.charCodeAt(t))%10007;for(let a=363;a>=0;a--){let o=new Date(t);o.setDate(o.getDate()-a);let s=o.toLocaleDateString(`en-US`,{month:`short`,day:`numeric`,year:`numeric`}),c=o.getDay(),l=Math.sin(a*.18+i)*10+Math.cos(a*.42+i)*5,u=0;l>5.5&&c!==0&&c!==6?u=Math.floor((l-4.5)*.75)+1:l>11&&(u=1),e!==`All communities`&&a%2==0&&(u=Math.max(0,Math.floor(u*.6))),r+=u;let d=0;u>=5?d=4:u>=3?d=3:u>=2?d=2:u>=1&&(d=1),n.push({dateStr:s,count:u,level:d})}return{days:n,totalContributions:r}}function j(){let e=d.user||{name:`Prajwal Ramagiri`,email:`ramagiri.prajwal@gmail.com`,username:`prajwal-ramagiri-6593`,bio:`- nil -`,joinDate:`2026-08-15`,pfp:null},t=f.selectedContributionGroup||`All communities`,{days:n,totalContributions:i}=A(t),a=`@${(e.username||e.name||`user`).toLowerCase().replace(/\s+/g,`-`)}`,o=e.joinDate?new Date(e.joinDate).toLocaleDateString(`en-US`,{month:`short`,day:`numeric`,year:`numeric`}):`Aug 15, 2026`,s=m(e),c=f.profileCommunityView===`created`?r.filter(e=>String(e.id).startsWith(`created-`)&&String(e.ownerId)===String(d.user?.id)):(f.joinedCommunities||[]).map(e=>r.find(t=>t.id===e)).filter(Boolean).filter(_),l=f.profileCommunityView===`created`?`My communities`:`Memberships`;return`
+  `}function A(e=`All communities`){let t=new Date(`2026-09-03T12:00:00Z`),n=[],r=0,i=0;for(let t=0;t<e.length;t++)i=(i*31+e.charCodeAt(t))%10007;for(let a=363;a>=0;a--){let o=new Date(t);o.setDate(o.getDate()-a);let s=o.toLocaleDateString(`en-US`,{month:`short`,day:`numeric`,year:`numeric`}),c=o.getDay(),l=Math.sin(a*.18+i)*10+Math.cos(a*.42+i)*5,u=0;l>5.5&&c!==0&&c!==6?u=Math.floor((l-4.5)*.75)+1:l>11&&(u=1),e!==`All communities`&&a%2==0&&(u=Math.max(0,Math.floor(u*.6))),r+=u;let d=0;u>=5?d=4:u>=3?d=3:u>=2?d=2:u>=1&&(d=1),n.push({dateStr:s,count:u,level:d})}return{days:n,totalContributions:0}}function j(){let e=d.user||{name:`Prajwal Ramagiri`,email:`ramagiri.prajwal@gmail.com`,username:`prajwal-ramagiri-6593`,bio:`- nil -`,joinDate:`2026-08-15`,pfp:null},t=f.selectedContributionGroup||`All communities`,{days:n,totalContributions:i}=A(t),a=`@${(e.username||e.name||`user`).toLowerCase().replace(/\s+/g,`-`)}`,o=e.joinDate?new Date(e.joinDate).toLocaleDateString(`en-US`,{month:`short`,day:`numeric`,year:`numeric`}):`Aug 15, 2026`,s=m(e),c=f.profileCommunityView===`created`?r.filter(e=>String(e.id).startsWith(`created-`)&&String(e.ownerId)===String(d.user?.id)):(f.joinedCommunities||[]).map(e=>r.find(t=>t.id===e)).filter(Boolean).filter(_),l=f.profileCommunityView===`created`?`My communities`:`Memberships`;return`
     <main class="profile-page-container">
       <div class="profile-layout">
         <!-- Left Column: Activity & Memberships -->
