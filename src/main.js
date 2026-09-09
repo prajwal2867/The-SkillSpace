@@ -2,7 +2,7 @@ import './styles.css';
 import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 
-const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, chatMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], profileCommunityView: 'memberships', planBilling: 'monthly', selectedPlan: null };
+const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, chatMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], profileCommunityView: 'memberships', planBilling: 'monthly', selectedPlan: null, pendingCommunityMedia: null, cropper: null };
 store.communities.forEach((community) => {
   const savedCommunity = String(community.id).startsWith('created-') ? { ...community, cover: '', creatorAvatar: '' } : community;
   if (!String(savedCommunity.id).startsWith('created-') || String(savedCommunity.ownerId) === String(store.user?.id)) {
@@ -208,7 +208,7 @@ function creatorCommunityView() {
                 <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
               </div>
-              <button class="creator-settings-cta" type="button">SETTINGS</button>
+              <button class="creator-settings-cta" type="button" data-action="community-settings">SETTINGS</button>
             </div>
           </div>
           <p class="creator-powered-by">powered by <strong>skillspace</strong></p>
@@ -229,7 +229,7 @@ function profileCommunityRow(community) {
     ? `<img src="${escapeHTML(iconSource)}" alt="${escapeHTML(community.title)} icon">`
     : addImageIcon('profile-community-placeholder-icon');
   const isFree = community.priceType === 'Free' || community.price === 'Free' || community.price === 'Free trial';
-  return `<button type="button" class="profile-community-row" data-community="${escapeHTML(community.id)}"><span class="profile-community-icon">${iconMarkup}</span><span class="profile-community-info"><strong>${escapeHTML(community.title)}</strong><span>${escapeHTML(community.members || '0')} members · ${isFree ? 'Free' : 'Paid'}</span></span></button>`;
+  return `<div class="profile-community-row"><button type="button" class="profile-community-icon" data-action="select-community" data-id="${escapeHTML(community.id)}" aria-label="Open ${escapeHTML(community.title)}">${iconMarkup}</button><span class="profile-community-info"><button type="button" class="profile-community-title" data-action="select-community" data-id="${escapeHTML(community.id)}">${escapeHTML(community.title)}</button><span>${escapeHTML(community.members || '0')} members · ${isFree ? 'Free' : 'Paid'}</span></span></div>`;
 }
 
 function discoverView() {
@@ -1189,7 +1189,8 @@ function communitySettingsModalContent() {
   const title = escapeHTML(community.title);
   const description = escapeHTML(community.description || '');
   const initialsText = escapeHTML((community.title || 'C').slice(0, 2).toUpperCase());
-  const cover = community.cover ? `<img src="${escapeHTML(community.cover)}" alt="">` : '';
+  const iconSource = state.pendingCommunityMedia?.type === 'icon' ? state.pendingCommunityMedia.dataUrl : community.creatorAvatar;
+  const coverSource = state.pendingCommunityMedia?.type === 'cover' ? state.pendingCommunityMedia.dataUrl : community.cover;
   const navItems = ['Dashboard', 'Layouts', 'Invite', 'General', 'Subscriptions', 'Categories', 'Tabs', 'Plugins', 'Metrics', 'Gamification', 'Discovery', 'Links', 'Billing & referrals'];
 
   return `
@@ -1204,14 +1205,14 @@ function communitySettingsModalContent() {
         </nav>
         <form class="community-settings-content" id="communitySettingsForm">
           <div class="community-settings-media-row">
-            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Icon</strong><span>Recommended:<br>128x128</span></div><label class="community-settings-upload community-settings-icon-upload">${community.creatorAvatar ? `<img src="${escapeHTML(community.creatorAvatar)}" alt="">` : addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload group icon"></label><button type="button" class="community-settings-change" data-action="community-upload-icon">CHANGE</button></div>
-            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Cover</strong><span>Recommended:<br>1084x576</span></div><label class="community-settings-upload community-settings-cover-upload">${cover || addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload cover image"></label><button type="button" class="community-settings-change" data-action="community-upload-cover">CHANGE</button></div>
+            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Icon</strong><span>Recommended:<br>128x128</span></div><label class="community-settings-upload community-settings-icon-upload">${iconSource ? `<img src="${escapeHTML(iconSource)}" alt="">` : addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload group icon"></label><button type="button" class="community-settings-change" data-action="community-upload-icon">CHANGE</button></div>
+            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Cover</strong><span>Recommended:<br>1084x576</span></div><label class="community-settings-upload community-settings-cover-upload">${coverSource ? `<img src="${escapeHTML(coverSource)}" alt="">` : addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload cover image"></label><button type="button" class="community-settings-change" data-action="community-upload-cover">CHANGE</button></div>
           </div>
           <div class="community-settings-fields">
             <div class="community-settings-field"><label for="communitySettingsName">Group name</label><input id="communitySettingsName" name="title" class="skool-input" value="${title}" maxlength="30" required><span class="community-settings-counter">${community.title.length}/30</span></div>
             <div class="community-settings-field is-disabled"><label for="communitySettingsUrl">URL</label><input id="communitySettingsUrl" class="skool-input" value="skool.com/${escapeHTML(community.slug || '')}" disabled><p>You can change your URL with a paid account. <a href="#upgrade">Upgrade now?</a></p></div>
             <div class="community-settings-field"><label for="communitySettingsDescription">Group description</label><textarea id="communitySettingsDescription" name="description" class="skool-textarea" maxlength="150" placeholder="Tell members what this group is about">${description}</textarea><span class="community-settings-counter">${(community.description || '').length}/150</span></div>
-            <div class="community-settings-inline-fields"><div class="community-settings-field"><label for="communitySettingsInitials">Initials</label><input id="communitySettingsInitials" name="initials" class="skool-input" value="${initialsText}" maxlength="2"></div><div class="community-settings-field"><label for="communitySettingsColor">Color</label><input id="communitySettingsColor" name="color" class="skool-input community-settings-color-input" value="${escapeHTML(community.accent || '#3d5ba9')}"></div></div>
+            <div class="community-settings-inline-fields"><div class="community-settings-field"><label for="communitySettingsInitials">Initials</label><input id="communitySettingsInitials" name="initials" class="skool-input" value="${initialsText}" maxlength="2"></div><div class="community-settings-field"><label for="communitySettingsColor">Color</label><div class="community-settings-color-control"><input id="communitySettingsColorPicker" type="color" value="${escapeHTML(community.accent || '#3d5ba9')}" aria-label="Choose community color"><input id="communitySettingsColor" name="color" class="skool-input community-settings-color-input" value="${escapeHTML(community.accent || '#3d5ba9')}" pattern="^#[0-9a-fA-F]{6}$" maxlength="7"></div></div></div>
             <fieldset class="community-settings-privacy"><legend>Who can see this group?</legend><label><input type="radio" name="accessType" value="Private"${community.accessType !== 'Public' ? ' checked' : ''}><span><strong>Private</strong><small>Only members can see who is in the group and what they post.</small></span></label><label><input type="radio" name="accessType" value="Public"${community.accessType === 'Public' ? ' checked' : ''}><span><strong>Public</strong><small>Anyone can see who is in the group and what they post.</small></span></label></fieldset>
             <button type="submit" class="settings-submit-gold-btn">SAVE CHANGES</button>
           </div>
@@ -1224,6 +1225,9 @@ function communitySettingsModalContent() {
 function modalCardContent() {
   if (state.modal === 'plan') {
     return planModalContent();
+  }
+  if (state.modal === 'community-cropper') {
+    return communityCropperModalContent();
   }
   if (state.modal === 'community-settings') {
     return communitySettingsModalContent();
@@ -1321,6 +1325,24 @@ function modalCardContent() {
   `;
 }
 
+function communityCropperModalContent() {
+  const type = state.cropper?.type || 'cover';
+  const isIcon = type === 'icon';
+  const title = isIcon ? 'Crop group icon' : 'Crop new cover photo';
+  const ratio = isIcon ? '1 / 1' : '1084 / 576';
+  return `
+    <section class="community-cropper-card" role="dialog" aria-modal="true" aria-labelledby="community-cropper-title" onclick="event.stopPropagation()">
+      <header class="community-cropper-header"><div><span class="community-cropper-kicker">GROUP SETTINGS</span><h2 id="community-cropper-title">${title}</h2></div><button class="community-settings-close" data-action="close-modal" aria-label="Close">&times;</button></header>
+      <div class="community-cropper-body">
+        <div class="community-cropper-viewport ${isIcon ? 'is-icon' : ''}" data-ratio="${ratio}"><img id="communityCropImage" src="${escapeHTML(state.cropper?.src || '')}" alt="Selected ${isIcon ? 'icon' : 'cover'} preview"></div>
+        <div class="community-cropper-controls"><label for="communityCropZoom">Zoom</label><input id="communityCropZoom" type="range" min="1" max="3" step="0.01" value="1" aria-label="Zoom image"><span id="communityCropZoomValue">100%</span></div>
+        <p class="community-cropper-help">Drag the image to choose what appears in the ${isIcon ? 'icon' : 'cover'}.</p>
+      </div>
+      <footer class="community-cropper-footer"><button type="button" class="community-cropper-cancel" data-action="close-modal">CANCEL</button><button type="button" class="settings-submit-gold-btn community-cropper-save" data-action="save-community-crop">SAVE</button></footer>
+    </section>
+  `;
+}
+
 function modal() {
   if (!state.modal) return '';
   const modalClass = state.modal === 'community-settings' ? ' modal-backdrop-community-settings' : '';
@@ -1348,6 +1370,8 @@ function bindAuth() {
   const backdrop = document.querySelector('.modal-backdrop');
   if (!backdrop) return;
 
+  if (state.modal === 'community-cropper') bindCommunityCropper(backdrop);
+
   backdrop.querySelectorAll('[data-auth]').forEach((element) => {
     element.onclick = (e) => {
       e.stopPropagation();
@@ -1362,6 +1386,14 @@ function bindAuth() {
     element.onclick = (e) => {
       e.stopPropagation();
       closeAuthModal();
+    };
+  });
+
+  backdrop.querySelectorAll('[data-action="community-upload-icon"], [data-action="community-upload-cover"]').forEach((element) => {
+    element.onclick = (event) => {
+      event.stopPropagation();
+      const selector = element.dataset.action === 'community-upload-icon' ? '.community-settings-icon-upload input' : '.community-settings-cover-upload input';
+      backdrop.querySelector(selector)?.click();
     };
   });
 
@@ -1398,13 +1430,32 @@ function bindAuth() {
 
   const communitySettingsForm = document.querySelector('#communitySettingsForm');
   if (communitySettingsForm) {
+    communitySettingsForm.querySelectorAll('.community-settings-upload input[type="file"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          state.cropper = { type: input.closest('.community-settings-icon-upload') ? 'icon' : 'cover', src: reader.result };
+          state.modal = 'community-cropper';
+          backdrop.innerHTML = modalCardContent();
+          bindAuth();
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+      });
+    });
     communitySettingsForm.onsubmit = (event) => {
       event.preventDefault();
       const activeCommunity = communities.find((item) => item.id === state.selected && isVisibleCommunity(item));
       const data = Object.fromEntries(new FormData(communitySettingsForm));
       if (!activeCommunity) return;
+      const media = state.pendingCommunityMedia;
       Object.assign(activeCommunity, { title: data.title.trim(), description: data.description.trim(), accessType: data.accessType, accent: data.color.trim() || activeCommunity.accent });
+      if (media?.type === 'cover') activeCommunity.cover = media.dataUrl;
+      if (media?.type === 'icon') activeCommunity.creatorAvatar = media.dataUrl;
       store.updateCommunity(activeCommunity, store.user?.id);
+      state.pendingCommunityMedia = null;
       closeAuthModal();
       render();
       showToast('Group settings saved');
@@ -1413,6 +1464,12 @@ function bindAuth() {
       const counter = event.target.parentElement.querySelector('.community-settings-counter');
       if (counter) counter.textContent = `${event.target.value.length}/${event.target.maxLength}`;
     }));
+    const colorPicker = communitySettingsForm.querySelector('#communitySettingsColorPicker');
+    const colorInput = communitySettingsForm.querySelector('#communitySettingsColor');
+    colorPicker?.addEventListener('input', () => { colorInput.value = colorPicker.value; });
+    colorInput?.addEventListener('input', () => {
+      if (/^#[0-9a-fA-F]{6}$/.test(colorInput.value)) colorPicker.value = colorInput.value;
+    });
   }
 
   const forgotForm = document.querySelector('#forgotForm');
@@ -1538,6 +1595,62 @@ function bindAuth() {
       showToast(`${name} is ready to set up.`);
     };
   }
+}
+
+function bindCommunityCropper(backdrop) {
+  const viewport = backdrop.querySelector('.community-cropper-viewport');
+  const image = backdrop.querySelector('#communityCropImage');
+  const zoom = backdrop.querySelector('#communityCropZoom');
+  const zoomValue = backdrop.querySelector('#communityCropZoomValue');
+  if (!viewport || !image || !zoom) return;
+  const crop = { zoom: 1, offsetX: 0, offsetY: 0, dragging: false, startX: 0, startY: 0 };
+  const clampOffsets = () => {
+    const viewportRect = viewport.getBoundingClientRect();
+    const imageScale = Math.max(viewportRect.width / image.naturalWidth, viewportRect.height / image.naturalHeight) * crop.zoom;
+    const imageWidth = image.naturalWidth * imageScale;
+    const imageHeight = image.naturalHeight * imageScale;
+    crop.offsetX = Math.max(viewportRect.width - imageWidth, Math.min(0, crop.offsetX));
+    crop.offsetY = Math.max(viewportRect.height - imageHeight, Math.min(0, crop.offsetY));
+  };
+  const draw = () => {
+    const viewportRect = viewport.getBoundingClientRect();
+    const imageScale = Math.max(viewportRect.width / image.naturalWidth, viewportRect.height / image.naturalHeight) * crop.zoom;
+    const imageWidth = image.naturalWidth * imageScale;
+    const imageHeight = image.naturalHeight * imageScale;
+    const left = (viewportRect.width - imageWidth) / 2 + crop.offsetX;
+    const top = (viewportRect.height - imageHeight) / 2 + crop.offsetY;
+    image.style.width = `${imageWidth}px`;
+    image.style.height = `${imageHeight}px`;
+    image.style.transform = `translate(${left}px, ${top}px)`;
+    zoomValue.textContent = `${Math.round(crop.zoom * 100)}%`;
+  };
+  image.onload = () => { clampOffsets(); draw(); };
+  zoom.oninput = () => { crop.zoom = Number(zoom.value); clampOffsets(); draw(); };
+  viewport.onpointerdown = (event) => { crop.dragging = true; crop.startX = event.clientX - crop.offsetX; crop.startY = event.clientY - crop.offsetY; viewport.setPointerCapture(event.pointerId); };
+  viewport.onpointermove = (event) => { if (!crop.dragging) return; crop.offsetX = event.clientX - crop.startX; crop.offsetY = event.clientY - crop.startY; clampOffsets(); draw(); };
+  viewport.onpointerup = () => { crop.dragging = false; };
+  viewport.onpointercancel = () => { crop.dragging = false; };
+  if (image.complete) { clampOffsets(); draw(); }
+  backdrop.querySelector('[data-action="save-community-crop"]')?.addEventListener('click', () => {
+    const viewportRect = viewport.getBoundingClientRect();
+    const imageScale = Math.max(viewportRect.width / image.naturalWidth, viewportRect.height / image.naturalHeight) * crop.zoom;
+    const imageWidth = image.naturalWidth * imageScale;
+    const imageHeight = image.naturalHeight * imageScale;
+    const left = (viewportRect.width - imageWidth) / 2 + crop.offsetX;
+    const top = (viewportRect.height - imageHeight) / 2 + crop.offsetY;
+    const outputWidth = state.cropper.type === 'icon' ? 512 : 1084;
+    const outputHeight = state.cropper.type === 'icon' ? 512 : 576;
+    const canvas = document.createElement('canvas');
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, Math.max(0, -left / imageScale), Math.max(0, -top / imageScale), viewportRect.width / imageScale, viewportRect.height / imageScale, 0, 0, outputWidth, outputHeight);
+    state.pendingCommunityMedia = { type: state.cropper.type, dataUrl: canvas.toDataURL('image/jpeg', 0.9) };
+    state.cropper = null;
+    state.modal = 'community-settings';
+    backdrop.innerHTML = modalCardContent();
+    bindAuth();
+  });
 }
 
 function render() {
@@ -1884,9 +1997,13 @@ function actions(action, element) {
     state.communityTab = element?.dataset.tab || 'About';
     render();
   } else if (action === 'select-community') {
-    const id = Number(element?.dataset.id || 1);
+    const rawId = element?.dataset.id || 1;
+    const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
+    const selectedCommunity = communities.find((community) => String(community.id) === String(id));
     state.selected = id;
-    state.view = 'detail';
+    state.view = selectedCommunity && String(selectedCommunity.id).startsWith('created-') && String(selectedCommunity.ownerId) === String(store.user?.id)
+      ? 'creator-community'
+      : 'detail';
     state.selectedMediaIndex = 0;
     state.communityTab = 'About';
     state.brandMenu = false;
