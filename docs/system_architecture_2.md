@@ -1,1348 +1,890 @@
-# SkillSpace Production System Architecture
+# SkillSpace System Architecture Specification (v2.0)
 
-## 1. Document Purpose
+## 1. Executive Summary & Architectural Vision
 
-This document is the production architecture specification for the new SkillSpace prototype. It converts the review of the old prototype and the new prototype into implementation rules, boundaries, contracts, operating standards, and acceptance criteria.
+### 1.1 Document Purpose
+This document provides the definitive, production-grade system architecture specification for **SkillSpace**, derived directly from a comprehensive audit of the current prototype build. It bridges the gap between the existing single-page client-side prototype (`src/main.js`, `src/styles.css`, `src/domain/data.js`, `src/services/store.js`) and a robust, scalable, 10/10 production platform.
 
-The objective is to move the prototype from an estimated 5/10 architecture to a system that can reasonably be rated 10/10 against explicit engineering criteria, and to define the work required before production readiness can be rated 10/10.
-
-A 10/10 rating in this document means:
-
-- The architecture has clear ownership boundaries.
-- Sensitive state is authoritative on the server.
-- Important behavior is covered by automated tests.
-- Failures are observable, recoverable, and safe.
-- Performance, security, accessibility, and data integrity have measurable standards.
-- The system can evolve without returning to a single-file application or uncontrolled global state.
-
-This is a target architecture, not a claim that the current prototype is production-ready. Production readiness must be earned through implementation, verification, security review, load testing, and operational rehearsal.
-
-## 2. Starting Point
-
-### 2.1 Old prototype
-
-The old prototype in `The SkillSpace - Copy` is a static browser application with:
-
-- A large static `index.html` shell.
-- Global JavaScript functions spread across `app.js`, `auth.js`, `profile.js`, and `settings.js`.
-- Inline event handlers such as `onclick` and `onsubmit`.
-- Multiple global mutable variables.
-- Mock data exposed through browser globals.
-- Client-owned users, sessions, and login attempts in `localStorage`.
-- A large stylesheet with feature styles and later override layers mixed together.
-- A broader set of visual product surfaces, including profile, settings, chat, notifications, and a create-community page.
-
-Its feature files are useful evidence of product areas, but they are not safe architectural boundaries because every file depends on shared global state and browser-global functions.
-
-### 2.2 New prototype
-
-The new prototype improves the runtime shape with:
-
-- A minimal HTML entry document.
-- Vite and native ES modules.
-- `src/main.js` as the application entry point.
-- Imported data in `src/domain/data.js`.
-- A local persistence adapter in `src/services/store.js`.
-- A single application state object.
-- Explicit render and bind phases.
-- A successful production build.
-
-The new prototype still has important architectural limitations:
-
-- Most behavior remains in one large `src/main.js` module.
-- Rendering, routing, authentication, persistence calls, and feature behavior are coupled.
-- `store.js` is a `localStorage` wrapper rather than a validated repository or application service.
-- Authentication and authorization are still client-owned.
-- Routing is represented by an in-memory `state.view`, not URL routes.
-- Domain values such as prices and member counts are display strings.
-- Some old product surfaces were replaced by toasts or placeholders rather than migrated.
-- The stylesheet contains repeated selector overrides from iterative visual changes.
-- The architecture document in the two prototypes is currently the same document and therefore does not describe the new implementation specifically.
-
-### 2.3 Architectural conclusion
-
-The new prototype should remain a modular monolith first. It should not jump directly to microservices. The correct progression is:
-
-1. Create real feature and domain boundaries in the web client.
-2. Introduce typed and validated contracts.
-3. Hide local persistence behind repository interfaces.
-4. Introduce a versioned server API.
-5. Move identity, permissions, membership, and money to server-authoritative storage.
-6. Add background processing, search, media, and real-time capabilities as independently testable adapters.
-7. Extract a service only after measured load, ownership, or deployment constraints justify it.
-
-## 3. Architecture Goals and Non-Goals
-
-### 3.1 Goals
-
-The system must support:
-
-- Public discovery of communities.
-- Search, filtering, sorting, and pagination.
-- Community detail pages with clear access and pricing information.
-- Registration, login, logout, recovery, and session management.
-- Profiles and account settings.
-- Free and paid memberships.
-- Community posts, comments, reactions, and moderation.
-- Courses, lessons, and progress tracking.
-- Events and reminders.
-- Direct messaging and notifications.
-- Creator community management.
-- Affiliate attribution and creator payouts.
-- Auditable payment and entitlement state.
-- Accessible and responsive web workflows.
-- Reliable deployments and observable operations.
-
-### 3.2 Non-goals for the first production phase
-
-The first production phase should not include these unless validated by product demand:
-
-- Independent microservices for every domain.
-- A dedicated search cluster before PostgreSQL search is measured to be insufficient.
-- A custom payment processor.
-- A custom video streaming platform.
-- Fully open group chat with no moderation model.
-- Real-time updates for every screen.
-- A native mobile application before the web API contracts stabilize.
-- Complex recommendation algorithms before basic discovery analytics exist.
-
-## 4. 10/10 Architecture Rubric
-
-The architecture is considered complete only when each area has an explicit owner, a stable contract, automated verification, and an operational failure plan.
-
-### 4.1 Boundaries
-
-- UI components do not access storage directly.
-- Feature modules do not reach into another feature's private implementation.
-- Domain rules do not depend on browser APIs.
-- API handlers do not contain business rules.
-- Repositories do not decide authorization.
-- External providers are accessed through adapters.
-- Cross-module communication uses application commands, queries, or events.
-
-### 4.2 Data integrity
-
-- All production data has a schema and migration history.
-- Foreign keys and unique constraints protect relationships.
-- Monetary values use integer minor units plus an explicit currency.
-- Membership and entitlement changes are transactional.
-- Payment webhooks are idempotent.
-- Every sensitive mutation has an audit event.
-- No critical authorization decision depends on local browser state.
-
-### 4.3 Security
-
-- Authentication is server-side.
-- Passwords use Argon2id or an equivalent memory-hard password algorithm.
-- Browser sessions use secure, HttpOnly, SameSite cookies or short-lived rotated tokens.
-- Authorization is checked on every protected read and mutation.
-- Rate limits are server-side.
-- User-generated content is validated and safely rendered.
-- Uploads are validated, scanned, transformed, and access-controlled.
-- Secrets never enter source control or client bundles.
-
-### 4.4 Testability
-
-- Pure domain rules have unit tests.
-- Repositories have integration tests.
-- API contracts have contract tests.
-- Critical journeys have browser end-to-end tests.
-- Accessibility checks run in CI.
-- Load tests cover discovery and authenticated workflows.
-- Failure paths are tested, not only successful paths.
-
-### 4.5 Operability
-
-- Logs have request and correlation identifiers.
-- Metrics cover latency, errors, queue depth, payment events, and authentication failures.
-- Traces connect web requests, API calls, database work, and jobs.
-- Alerts have owners and runbooks.
-- Backups are automated and restore-tested.
-- Deployments can be rolled back.
-- Incident and disaster recovery exercises are documented.
-
-## 5. Target System Shape
+This specification serves as the single source of truth for:
+- Refactoring the client-side monolith into a decoupled, domain-driven architecture.
+- Designing and implementing the server-authoritative backend modular monolith.
+- Defining strict data models, relational database schemas (PostgreSQL), and migration strategies.
+- Establishing formal REST/SSE/WebSocket API contracts.
+- Implementing zero-trust security, Role-Based Access Control (RBAC), and PCI-compliant billing.
+- Guaranteeing performance, accessibility, automated testability, and operational observability.
 
 ```mermaid
-flowchart TD
-    Browser[Browser] --> Edge[CDN and edge cache]
-    Edge --> Web[Web application]
-    Web --> API[Versioned application API]
-    API --> Auth[Identity and authorization module]
-    API --> Discovery[Discovery module]
-    API --> Community[Community module]
-    API --> Membership[Membership and entitlement module]
-    API --> Learning[Learning module]
-    API --> Social[Posts and moderation module]
-    API --> Messaging[Messaging and notification module]
-    API --> Billing[Billing module]
-    API --> DB[(PostgreSQL)]
-    API --> Cache[(Redis)]
-    API --> Storage[Object storage]
-    API --> Queue[Durable job queue]
-    Queue --> Worker[Background workers]
-    Worker --> Email[Email provider]
-    Worker --> Search[Search index adapter]
-    Worker --> Media[Media processing]
-    Worker --> Analytics[Analytics]
-    Billing --> Payment[Payment provider]
-    Payment --> Webhook[Verified webhook endpoint]
-    Webhook --> Billing
-    API --> Telemetry[Logs metrics traces]
-    Worker --> Telemetry
+graph TD
+    subgraph ClientLayer ["Client Layer (Web Application)"]
+        SPA["Vite SPA Shell"]
+        Router["Client URL Router"]
+        State["State Manager & Store"]
+        Features["Feature Modules (Discovery, Detail, Creator, Profile, Settings, etc.)"]
+        Components["UI Component Library & Design Tokens"]
+    end
+
+    subgraph EdgeLayer ["Edge & Ingress Layer"]
+        CDN["Global Edge CDN & SSL"]
+        WAF["WAF & Rate Limiting"]
+    end
+
+    subgraph BackendMonolith ["Backend Modular Monolith"]
+        Gateway["API Gateway / Router (REST + SSE)"]
+        AuthMod["Identity & IAM Module"]
+        CommMod["Community & Catalog Module"]
+        MemMod["Membership & RBAC Module"]
+        ClassMod["Classroom & Course Module"]
+        SocialMod["Discussion Feed & Social Module"]
+        MsgMod["Messaging & Realtime Gateway"]
+        BillMod["Billing & Subscriptions Module"]
+        MediaMod["Media & Storage Module"]
+        ModMod["Moderation & Audit Module"]
+    end
+
+    subgraph DataLayer ["Data & Storage Layer"]
+        PG[("PostgreSQL (Transactional Source of Truth)")]
+        Redis[("Redis (Cache, Sessions, Pub/Sub, Queues)")]
+        S3[("Object Storage (S3 / R2 Bucket)")]
+    end
+
+    subgraph WorkerLayer ["Async & Background Jobs"]
+        Worker["Durable Background Workers"]
+        Outbox["Transactional Outbox Relay"]
+        Stripe["Stripe Payments & Webhooks"]
+        Email["Transactional Email Provider"]
+    end
+
+    SPA --> EdgeLayer
+    EdgeLayer --> Gateway
+    Gateway --> AuthMod & CommMod & MemMod & ClassMod & SocialMod & MsgMod & BillMod & MediaMod & ModMod
+    AuthMod & CommMod & MemMod & ClassMod & SocialMod & MsgMod & BillMod & MediaMod & ModMod --> PG
+    AuthMod & MsgMod & CommMod --> Redis
+    MediaMod --> S3
+    PG -.-> Outbox
+    Outbox --> Worker
+    Worker --> Email & Stripe & S3
+    BillMod <--> Stripe
 ```
 
-### 5.1 Deployment shape
+---
 
-Start with one deployable modular backend and one web application. The backend may run as a modular monolith with separate worker processes.
+### 1.2 Defining the 10/10 Production Standard
+A **10/10 Engineering Rating** for SkillSpace mandates strict adherence to the following non-negotiable criteria:
 
-Recommended deployables:
+1. **Clear Domain Boundaries**: UI components perform zero direct storage access or business logic; business rules reside in pure domain services; external providers (Stripe, S3, Email) are accessed strictly via pluggable adapters.
+2. **Server Authority**: All sensitive state—including identity, sessions, permissions, memberships, community ownership, and money—is strictly validated and stored in ACID-compliant PostgreSQL transactions.
+3. **Impenetrable Security**: Password hashing via Argon2id, HTTP-only SameSite secure session cookies, CSRF protection, community-scoped RBAC authorization on every endpoint, strict Content Security Policy (CSP), and automated sanitization against XSS.
+4. **Resilient Data Integrity**: No financial value or member count is stored as a display string. Monetary amounts use integer minor units (cents) with explicit ISO currency codes; relational integrity is enforced by database foreign keys, constraints, and migrations.
+5. **Comprehensive Verification**: 100% test coverage for pure domain logic, high-coverage repository integration tests, contract tests for third-party webhooks, automated Playwright E2E suites for core user journeys, and WCAG 2.1 AA accessibility compliance.
+6. **Zero-Downtime Operability**: Structured JSON logging with trace/span correlation IDs (OpenTelemetry), sub-second Prometheus/Grafana metrics, automated WAL database backups, and blue-green zero-downtime deployment pipelines.
 
-- Web application.
-- API application.
-- Background worker.
-- Scheduled job runner.
-- PostgreSQL database.
-- Redis instance where needed.
-- Object storage bucket and CDN.
+---
 
-The modules should be logically isolated even while deployed together. A module may be extracted later behind its API or event contract without changing the web client.
+## 2. Current Prototype Build: Analysis & Inventory
 
-### 5.2 Request flow
+### 2.1 Build & Runtime Topology
+The current codebase operates as a high-fidelity client-side Single-Page Application (SPA):
+- **Build Tooling**: Vite 5.x (`package.json`) compiling ES Modules (`src/main.js`, `src/styles.css`).
+- **Entry HTML (`index.html`)**: Minimal HTML5 container mounting into `<div id="app"></div>` with `#101311` theme color.
+- **Single-File Monolith (`src/main.js`)**: ~1,911 lines executing synchronous DOM generation, event binding, local storage manipulation, client-side SHA-256 password hashing, and in-memory view switching.
+- **Fixture Data Layer (`src/domain/data.js`)**: 23.6 KB of curated mock fixtures for 24 communities, demo users, unread chat threads, notifications, and dynamic activity heatmaps.
+- **Storage Layer (`src/services/store.js`)**: Synchronous `localStorage` facade managing users, active session tokens, community records, and feed posts.
+- **Stylesheet (`src/styles.css`)**: 93.1 KB of comprehensive custom CSS defining design tokens, dark mode theming, glassmorphism, responsive breakpoints, micro-animations, and custom UI components.
 
-1. The browser requests a public page or an application API resource.
-2. The edge layer serves cacheable public content where appropriate.
-3. The web application requests typed data from the API.
-4. The API authenticates the request and validates its input.
-5. The application service checks resource-scoped authorization.
-6. The domain operation reads and writes through repositories.
-7. PostgreSQL commits the authoritative state.
-8. An outbox record is written in the same transaction when asynchronous work is required.
-9. A worker publishes notifications, updates search, processes media, or records analytics.
-10. The API returns a stable success or error response.
-11. Logs, metrics, and traces record the outcome without exposing secrets or sensitive content.
+---
 
-## 6. Web Application Architecture
+### 2.2 Complete Surface & Feature Inventory
 
-### 6.1 Proposed source layout
+```text
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             TOPBAR NAVIGATION                                    │
+│ [Brand / Switcher ⌄] [Search Communities ⌕]      [Chats 💬] [Alerts 🔔] [Avatar] │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  [ DISCOVER VIEW ]             [ DETAIL / ABOUT VIEW ]    [ CREATOR GROUP VIEW ] │
+│  - Hero Banner                 - Star Rating & Reviews    - Group Setup Progress │
+│  - Category Chips (10)         - Media Video Showcase     - Feed Toolbar & Topics│
+│  - Price/Type/Sort Filters     - Interactive Thumbnails   - Post Composer        │
+│  - Responsive Cards Grid       - Metadata Summary Bar     - Member Avatar Stack  │
+│  - Dynamic Search Filtering    - Creator Information Card - Community Sidebar    │
+│                                                                                  │
+│  [ CREATE COMMUNITY ]          [ SELECT PLAN VIEW ]       [ USER PROFILE VIEW ]  │
+│  - 3D Revenue Carousel         - Starter vs Pro Tiers     - Bio & Location Card  │
+│  - Community Growth Metrics    - Monthly/Yearly Toggle    - 365-Day Activity Grid│
+│  - Earning Projections         - 14-Day Free Trial CTA    - Memberships List     │
+│                                                                                  │
+│  [ SETTINGS SUITE ]            [ MODAL DIALOGS ]          [ SLIDE PANELS ]       │
+│  - Profile Details             - Auth (Login / Register)  - Direct Messages Chat │
+│  - Account & Credentials       - Plan Checkout (Trial/CC) - Notifications List   │
+│  - Payments & Payouts          - Community Settings & Del - Community Switcher   │
+│  - Affiliate Links & Stats     - Image Upload Pickers     - Filter Popup Dialog  │
+│                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 1. Global Navigation & Topbar
+- **Brand & Community Switcher**: Wordmark dropdown showing all user-joined communities, avatar thumbnails, search filtering within joined communities, and quick actions ("Create a community", "Discover communities").
+- **Global Search Bar**: Instant search input with clear button (`×`) that synchronizes query state across the application.
+- **Direct Messaging Drawer**: Unread badge counter, user search filter, conversation list with timestamp and preview text, and "Mark all as read" capability.
+- **Notifications Trigger**: Bell icon with unread count indicator triggering toast notifications and slide-out alerts.
+- **Account Dropdown**: Authenticated user avatar displaying initial/pfp, email, navigation links (Profile, Settings, Affiliates, Language, Help Center, Discover, Log Out), and quick modal triggers for unauthenticated visitors.
+- **Contextual Sub-Navigation Bar**: Dynamically displayed when inside a joined community, providing tabbed navigation across: *Community, Classroom, Calendar, Members, Map, Leaderboards, About*.
+
+#### 2. Community Discovery (`discoverView`)
+- **Hero Header**: High-impact banner ("A better place to belong - Discover communities").
+- **Catalog Toolbar**: Full-width search bar with real-time text query filtering.
+- **Category Navigation**: 10 curated categories (*Trending, Hobbies, Music, Money, Tech, Health, Sports, Self-improvement, Writing, Art*).
+- **Advanced Filter Popup**: Multi-dimensional filtering across:
+  - *Price*: All, Free, Paid.
+  - *Access Type*: All, Private, Public.
+  - *Sort Order*: Trending, Top (sorted by parsed member counts).
+- **Community Grid**: Card components with custom accent glow (`--accent`), cover imagery, access type badge (open vs lock), member count badges, price badges, and hover transitions.
+- **Zero-State Fallback**: Styled empty state with "Reset filters" action button.
+
+#### 3. Community Detail & About Page (`detailView`)
+- **Skool-Style Header**: Community title, 5-star golden rating badge, and review counter (e.g., `★ ★ ★ ★ ★ 5.0 · 93 reviews`).
+- **Interactive Media Player Showcase**: Video viewport with custom play overlay, duration badge (`4:52`), and active presentation container.
+- **Thumbnail Gallery Carousel**: 5-thumbnail image selector updating the primary media screen on click.
+- **Professional Metadata Bar**: Semantic icons displaying Access Type, Member Count, Price model, and Creator Name.
+- **About Copy & Bulleted Outcomes**: Detailed multi-paragraph value propositions and curriculum previews.
+- **Creator Bio Card**: Creator avatar, role indicator, member stats, and direct contact options.
+- **Review List & Pagination**: User reviews featuring author avatars, star ratings, relative timestamps, review copy, and "See more reviews" expansion.
+
+#### 4. Creator Group & Community Portal (`creatorCommunityView`)
+- **Post Composer**: Interactive text input prompt ("Write something") with creator avatar.
+- **Feed Toolbar**: Topic filtering chips ("All", "General discussion") and feed layout options.
+- **Group Setup Checklist**: Onboarding progress indicator tracking 4 milestones (*Invite 3 people, Add group description, Set cover image, Write your first post*).
+- **Community Info Sidebar**: Cover preview, customized vanity URL (`skillspace.in/:slug`), private group indicator, real-time statistics (Members, Online now, Admins), and member avatar stack.
+- **Settings Launcher**: Modal trigger for updating community metadata, photos, or deletion.
+
+#### 5. Community Creation Landing (`createCommunityView`)
+- **Hero & Conversion Copy**: "Build a community around your passion - Get discovered by 30 million users".
+- **Interactive 3D Carousel**: 5-slide rotating deck showcasing top-earning communities with dynamic monthly revenue projections (calculated from member counts × price).
+- **Carousel Controls**: Previous/Next chevron navigation, clickable dot pagination, and direct slide card selection.
+- **Action CTA**: Primary button transitioning directly into the plan checkout funnel.
+
+#### 6. Plan Selection & Pricing Matrix (`selectPlanView`)
+- **Tier Cards**: Starter ($29/mo) vs Pro ($99/mo) pricing packages.
+- **Billing Frequency Switcher**: Monthly vs Yearly toggle offering 20% annual discounts.
+- **Feature Matrix**: Checklist detailing member limits, transaction fee percentages, video hosting allocations, and custom domain support.
+- **Checkout Modal Trigger**: Action buttons opening the trial checkout modal with the pre-selected plan.
+
+#### 7. Profile & Activity Surface (`profileView`)
+- **User Banner & Profile Card**: Banner backdrop, large user avatar/initials, full name, handle, bio with 150-character counter, location, and join date.
+- **GitHub-Style Contribution Heatmap**: Interactive 365-day SVG/CSS grid mapping activity levels (0 through 4), with mouseover tooltips displaying exact contribution counts and dates.
+- **Contribution Community Filter**: Dropdown filtering activity by specific communities or "All communities".
+- **Membership vs Created Tabs**: Toggleable list displaying user-joined communities vs communities created and managed by the user.
+
+#### 8. Settings Suite (`settingsView`)
+- **Profile Tab**: First name, last name, bio with live length counter, location, and avatar upload trigger.
+- **Account Tab**: Email update trigger, password reset modal trigger, and global "Log out everywhere" action.
+- **Payments Tab**: Saved credit card methods, payout account onboarding (Stripe Connect), and billing transaction history.
+- **Notifications Tab**: Email digest toggles, direct message notifications, and community mention alerts.
+- **Affiliates Tab**: Unique referral link generator, one-click clipboard copy button, commission rates (40% recurring), and earnings analytics.
+- **Theme & Language Tab**: Light / Dark mode selector applying instantaneous CSS variables, and language localization dropdown.
+
+#### 9. Modals & Dialog System
+- **Auth Modal**: Tabbed Log In / Sign Up dialog, email/password validation, and SHA-256 password verification.
+- **Plan Checkout Modal**: 14-day free trial banner, community name input, simulated credit card form (formatting card number, expiry, CVC), coupon code entry, and automated community generation into state.
+- **Community Settings Modal**: Photo file inputs for icon/cover, title, description, privacy toggle, and community deletion.
+
+---
+
+## 3. Current Prototype Gaps vs. Production Standard (10/10)
+
+| Architectural Dimension | Current Prototype Build | Target Production Standard (10/10) |
+| :--- | :--- | :--- |
+| **Code Structure & Modularity** | Single ~1,911 line `main.js` script containing rendering, event binding, routing, validation, and storage. | Decoupled feature modules, isolated domain models, pure presentational components, dedicated API clients, and application controllers. |
+| **Routing & History** | Ephemeral `state.view` string variable. Page refresh resets state; browser back/forward buttons break. | HTML5 History API URL routing (`/discover`, `/c/:slug`, `/c/:slug/classroom`, `/profile`, `/settings/:tab`) with deep linking and SSR compatibility. |
+| **Authentication & IAM** | Client-side SHA-256 hashing inside `main.js` evaluated against plain-text `localStorage` records. | Server-authoritative Argon2id password hashing, HTTP-only SameSite secure JWT/session cookies, refresh token rotation, and rate limiting. |
+| **Authorization & RBAC** | UI checks hiding buttons or filtering arrays on the client (`isVisibleCommunity`). | Server-enforced Role-Based Access Control (Visitor, Member, Moderator, Creator, Admin) checked on every API route and database query. |
+| **Data Integrity & Typing** | Unstructured display strings (`"$99/month"`, `"12.4k"`, `"Free trial"`). | Strongly-typed relational entities: integer minor units (`amount_cents: 9900`, `currency: 'USD'`), BigInt counts, and strict database foreign key constraints. |
+| **Persistence & Transactions** | Unreliable synchronous `localStorage` facade in `store.js` susceptible to data loss, quota limits, and race conditions. | PostgreSQL 16+ relational database with ACID transactions, WAL logging, connection pooling (PgBouncer), and automated migrations. |
+| **Billing & Payments** | Mock form fields saving fake community entries directly to browser storage. | Stripe Billing & Stripe Connect integration, PCI-DSS SAQ A compliance, idempotent webhook processing, and ledger-backed subscriptions. |
+| **Media & File Storage** | File input triggers without backend upload endpoints; Unsplash/placeholder image URLs. | Direct-to-S3/R2 presigned upload pipeline, MIME/magic-byte validation, virus scanning, Sharp image resizing, and Cloudflare CDN delivery. |
+| **Realtime Infrastructure** | Static arrays in `data.js` with simulated mark-as-read actions. | WebSocket / Server-Sent Events (SSE) gateway backed by Redis Pub/Sub for instant direct messages, notifications, and live post reactions. |
+| **Async Processing** | Zero background task processing; all execution occurs on the main browser thread. | Transactional Outbox pattern paired with durable background queues (BullMQ / Redis) for emails, media processing, and search indexing. |
+| **Automated Verification** | Zero automated tests (no unit, integration, contract, or E2E tests). | Vitest unit/integration tests, Playwright E2E suites for all core user journeys, API contract tests, and automated axe-core accessibility CI checks. |
+| **Observability** | `console.log` and UI toasts. | OpenTelemetry distributed tracing, structured JSON logging with correlation IDs, Prometheus metric endpoints, and Grafana alerting dashboards. |
+
+---
+
+## 4. Target Modular Monolith Architecture
+
+### 4.1 System Topology & Request Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client Browser
+    participant CDN as Cloudflare Edge CDN
+    participant Web as Web Application (SPA)
+    participant API as Fastify API Gateway
+    participant Mod as Domain Modules (Auth/Comm/Billing)
+    participant DB as PostgreSQL 16 (Primary)
+    participant Redis as Redis Cache & Pub/Sub
+    participant Outbox as Transactional Outbox
+    participant Worker as Background Workers (BullMQ)
+
+    User->>CDN: GET /c/tech-masters (Request Page)
+    CDN->>Web: Serve Cached Static Bundle (HTML/JS/CSS)
+    Web->>API: GET /api/v1/communities/tech-masters
+    API->>Redis: Check Cached Community Detail
+    alt Cache Hit
+        Redis-->>API: Return Serialized JSON
+    else Cache Miss
+        API->>Mod: CommunityService.getBySlug("tech-masters")
+        Mod->>DB: SELECT * FROM communities WHERE slug = $1
+        DB-->>Mod: Community Record + Creator + Stats
+        Mod->>Redis: SETEX community:tech-masters 300 (JSON)
+        Mod-->>API: Validated Community DTO
+    end
+    API-->>Web: 200 OK (Community JSON)
+    Web-->>User: Render Skool-Style Detail View
+
+    Note over User,Worker: User Joins Paid Community Journey
+    User->>Web: Click "Join Community" & Submit Payment
+    Web->>API: POST /api/v1/communities/:id/memberships (Idempotency-Key)
+    API->>Mod: BillingService.createSubscription(...)
+    Mod->>DB: BEGIN Transaction
+    Mod->>DB: INSERT INTO subscriptions (...)
+    Mod->>DB: INSERT INTO community_memberships (...)
+    Mod->>DB: INSERT INTO outbox_events (type: 'membership.created', payload)
+    DB-->>Mod: COMMIT Transaction
+    Mod-->>API: Membership Activated DTO
+    API-->>Web: 201 Created (Redirect to Community Feed)
+    
+    Outbox->>DB: Poll for Unprocessed Outbox Records
+    Outbox->>Worker: Enqueue 'membership.created' Job
+    Worker->>Redis: Invalidate Cached Member Lists
+    Worker->>User: Send Welcome Email via SES / Resend
+```
+
+---
+
+### 4.2 Module Boundaries & Responsibilities
+
+The backend is architected as a **Modular Monolith** where each domain is completely isolated behind an explicit public API service interface:
+
+1. **Identity & IAM Module (`modules/identity`)**: User registration, Argon2id authentication, session issuance, refresh token rotation, email verification, password reset tokens, and MFA.
+2. **Community & Catalog Module (`modules/community`)**: Community lifecycle, vanity slugs, categories, discovery indexing, search query filters, and community settings.
+3. **Membership & RBAC Module (`modules/membership`)**: Community memberships, role assignments (Visitor, Member, Moderator, Creator, Admin), permission evaluations, member directories, and ban enforcement.
+4. **Classroom & Learning Module (`modules/classroom`)**: Courses, modules, lessons (video/text/downloadable), attachment security, and user lesson completion tracking.
+5. **Discussion Feed & Social Module (`modules/social`)**: Post publication, rich text formatting, comments, nested replies, pinned announcements, and emoji reactions.
+6. **Messaging & Realtime Gateway (`modules/messaging`)**: 1-on-1 direct messaging, conversation threads, presence indicators, unread counters, and WebSocket/SSE broadcast connections.
+7. **Billing & Subscriptions Module (`modules/billing`)**: Stripe customer synchronization, checkout sessions, subscription lifecycles, 14-day free trials, affiliate tracking, invoice history, and creator payouts via Stripe Connect.
+8. **Media & Storage Module (`modules/media`)**: Presigned S3 upload generation, MIME/magic byte validation, image optimization pipelines, and Cloudflare CDN asset delivery.
+9. **Moderation, Trust & Safety Module (`modules/moderation`)**: User/post reporting flags, moderation action logs, content filtering, rate limiting, and immutable audit trails.
+
+---
+
+## 5. Client Architecture (Refactoring `src/main.js`)
+
+### 5.1 Modular Source Code Layout
+To eliminate the 1,911-line single-file bottleneck in `src/main.js`, the client codebase is restructured into feature-oriented, domain-driven modules:
 
 ```text
 src/
-  app/
-    main.js
-    app-state.js
-    router.js
-    render-app.js
-    error-boundary.js
-  components/
-    Header.js
-    Modal.js
-    CommunityCard.js
-    EmptyState.js
-    LoadingState.js
-    Toast.js
-  features/
-    discovery/
-      discovery-view.js
-      discovery-controller.js
-      discovery-query.js
-      discovery-api.js
-    authentication/
-      auth-view.js
-      auth-controller.js
-      auth-api.js
-      auth-validation.js
-    communities/
-      community-detail-view.js
-      community-controller.js
-      community-api.js
-    profile/
-      profile-view.js
-      profile-controller.js
-      profile-api.js
-    settings/
-      settings-view.js
-      settings-controller.js
-      settings-api.js
-    posts/
-      post-list.js
-      post-composer.js
-      post-api.js
-    messaging/
-      chat-view.js
-      notification-view.js
-      messaging-api.js
-  domain/
-    community.js
-    user.js
-    membership.js
-    post.js
-    course.js
-    money.js
-    validation.js
-  infrastructure/
-    http-client.js
-    local-storage-repository.js
-    api-repositories.js
-    analytics.js
-    feature-flags.js
-  styles/
-    tokens.css
-    base.css
-    components.css
-    features.css
+├── app/
+│   ├── app.js                   # Application bootstrap & lifecycle coordinator
+│   ├── router.js                # HTML5 History API client router & route guards
+│   ├── state.js                 # Reactive centralized store & state selectors
+│   ├── events.js                # Global event emitter for cross-feature signals
+│   └── error-boundary.js        # Global unhandled error & rejection handler
+│
+├── components/                  # Reusable, stateless UI design components
+│   ├── layout/
+│   │   ├── Header.js            # Topbar navigation, brand switcher, and search
+│   │   ├── SubNav.js            # Community tabbed subnavigation bar
+│   │   └── Modal.js             # Accessible dialog container (focus trap, ARIA)
+│   ├── cards/
+│   │   ├── CommunityCard.js     # Discovery grid community card with accent glow
+│   │   └── ReviewCard.js        # Star rating & review card component
+│   ├── feedback/
+│   │   ├── Toast.js             # Animated transient notification alerts
+│   │   ├── Skeleton.js          # Shimmer loading skeleton placeholders
+│   │   └── EmptyState.js        # Configurable empty state with action buttons
+│   └── forms/
+│       ├── Button.js            # Primary, secondary, outline, and ghost buttons
+│       ├── Input.js             # Text input with validation and character counters
+│       └── RadioGroup.js        # Styled custom radio buttons for filter dialogs
+│
+├── features/                    # Feature modules (View + Controller + API Adapter)
+│   ├── discovery/               # Public community catalog & advanced filters
+│   │   ├── discovery.view.js
+│   │   ├── discovery.controller.js
+│   │   └── discovery.api.js
+│   ├── community-detail/        # Skool-style sales & about presentation page
+│   │   ├── detail.view.js
+│   │   ├── gallery.controller.js
+│   │   └── detail.api.js
+│   ├── creator-group/           # Creator community portal, onboarding, & feed
+│   │   ├── creator.view.js
+│   │   ├── checklist.controller.js
+│   │   └── feed.api.js
+│   ├── create-community/        # 3D carousel growth page & plan checkout
+│   │   ├── create.view.js
+│   │   ├── carousel.controller.js
+│   │   └── checkout.api.js
+│   ├── profile/                 # User profile & 365-day activity heatmap
+│   │   ├── profile.view.js
+│   │   ├── heatmap.controller.js
+│   │   └── profile.api.js
+│   ├── settings/                # Multi-tab settings suite & theme manager
+│   │   ├── settings.view.js
+│   │   ├── settings.controller.js
+│   │   └── settings.api.js
+│   ├── messaging/               # Direct message chat drawer & unread manager
+│   │   ├── chat-drawer.view.js
+│   │   ├── chat.controller.js
+│   │   └── chat.socket.js
+│   └── auth/                    # Login, signup, and password reset dialogs
+│       ├── auth-modal.view.js
+│       ├── auth.controller.js
+│       └── auth.api.js
+│
+├── domain/                      # Pure business logic, types, & validation rules
+│   ├── community.model.js       # Community entity rules & pricing calculations
+│   ├── user.model.js            # User profile models & permission checks
+│   ├── money.vo.js              # Value object for currency minor units & formatting
+│   └── validation.js            # Client-side validation schemas (Zod / custom)
+│
+├── infrastructure/              # Low-level external communication adapters
+│   ├── http-client.js           # Fetch wrapper with interceptors, JWT, & retries
+│   ├── sse-client.js            # Server-Sent Events subscriber with auto-reconnect
+│   ├── storage-repository.js    # IndexedDB / LocalStorage client cache fallback
+│   └── logger.js                # Structured browser telemetry and error logger
+│
+└── styles/                      # Modular CSS architecture
+    ├── tokens.css               # Color variables, typography, spacing, shadows
+    ├── base.css                 # Reset, typography, layout containers
+    ├── components.css           # Buttons, cards, modals, form inputs, heatmaps
+    ├── dark-theme.css           # Dark mode overrides (`.theme-dark`)
+    └── animations.css           # Keyframes, slide transitions, and carousel 3D
 ```
 
-The names are examples. The rule is that each feature owns its view, controller, validation, and API adapter. The application shell coordinates features but does not implement their business rules.
+---
 
-### 6.2 State ownership
+### 5.2 Client-Side URL Routing Specification
 
-State must be classified before it is stored:
+The router replaces in-memory `state.view` switching with standard browser History routing:
 
-- URL state: route, community slug, settings section, query parameters.
-- Server state: communities, user profile, memberships, posts, notifications, payments.
-- Session state: current authenticated identity and session status.
-- Local UI state: modal visibility, open menu, selected tab, input draft.
-- Derived state: filtered result count, unread count, membership eligibility.
+| Route Pattern | Feature Module | Access Policy | Page Title & Metadata |
+| :--- | :--- | :--- | :--- |
+| `/` or `/discover` | `features/discovery` | Public | "Discover Communities \| SkillSpace" |
+| `/c/:slug` | `features/community-detail` | Public | ":communityTitle \| SkillSpace" |
+| `/c/:slug/about` | `features/community-detail` | Public | "About :communityTitle \| SkillSpace" |
+| `/c/:slug/feed` | `features/creator-group` | Member Only | "Community Feed \| :communityTitle" |
+| `/c/:slug/classroom` | `features/classroom` | Member Only | "Classroom \| :communityTitle" |
+| `/c/:slug/classroom/:lessonId`| `features/classroom` | Member Only | ":lessonTitle \| :communityTitle" |
+| `/c/:slug/members` | `features/community-members`| Member Only | "Members \| :communityTitle" |
+| `/c/:slug/settings` | `features/community-settings`| Creator / Admin | "Group Settings \| :communityTitle" |
+| `/create` | `features/create-community` | Public / Auth | "Create a Community \| SkillSpace" |
+| `/create/plan` | `features/create-community` | Public / Auth | "Select a Plan \| SkillSpace" |
+| `/profile` or `/u/:username` | `features/profile` | Public / Auth | ":displayName \| SkillSpace" |
+| `/settings` | `features/settings` (Profile) | Authenticated | "Account Settings \| SkillSpace" |
+| `/settings/:tab` | `features/settings` (:tab) | Authenticated | ":tab Settings \| SkillSpace" |
+| `/login` | `features/auth` (Modal) | Visitor Only | "Log In \| SkillSpace" |
+| `/register` | `features/auth` (Modal) | Visitor Only | "Sign Up \| SkillSpace" |
 
-The application must not duplicate server state in multiple mutable locations without an invalidation strategy. A successful mutation must either update the local cache deterministically or refetch the affected resource.
+---
 
-### 6.3 Rendering rules
+## 6. Database Schema & Relational Specifications (PostgreSQL)
 
-- Use semantic elements for buttons, forms, navigation, dialogs, lists, and headings.
-- Avoid inline event handlers.
-- Avoid `onclick` attributes and browser-global feature functions.
-- Avoid injecting untrusted values into HTML strings.
-- Prefer component rendering with safe text nodes or a trusted templating system.
-- Provide loading, empty, error, and success states for each server-backed view.
-- Preserve user input when a request fails.
-- Disable or deduplicate repeat submissions.
-- Keep focus inside dialogs and restore focus when dialogs close.
+The database schema is modeled in PostgreSQL 16+ using strict constraints, indexes, foreign keys, and UUIDv7 primary keys for chronological ordering and high-throughput inserts.
 
-### 6.4 Routing rules
+```mermaid
+erDiagram
+    USERS ||--o{ USER_SESSIONS : has
+    USERS ||--o{ COMMUNITY_MEMBERSHIPS : holds
+    USERS ||--o{ USER_CONTRIBUTIONS : logs
+    COMMUNITIES ||--o{ COMMUNITY_MEMBERSHIPS : includes
+    COMMUNITIES ||--o{ MEMBERSHIP_PLANS : offers
+    COMMUNITIES ||--o{ COURSES : hosts
+    COMMUNITIES ||--o{ POSTS : contains
+    COURSES ||--o{ COURSE_MODULES : organizes
+    COURSE_MODULES ||--o{ LESSONS : contains
+    LESSONS ||--o{ LESSON_PROGRESS : tracks
+    USERS ||--o{ LESSON_PROGRESS : records
+    POSTS ||--o{ COMMENTS : receives
+    POSTS ||--o{ POST_REACTIONS : has
+    USERS ||--o{ POSTS : authors
+    USERS ||--o{ COMMENTS : writes
+    COMMUNITY_MEMBERSHIPS ||--o{ SUBSCRIPTIONS : billed_via
+    CONVERSATIONS ||--o{ CONVERSATION_PARTICIPANTS : includes
+    CONVERSATIONS ||--o{ DIRECT_MESSAGES : contains
+    USERS ||--o{ DIRECT_MESSAGES : sends
+```
 
-Use real URL routes rather than only an in-memory `state.view`:
+### 6.1 Core PostgreSQL DDL Schema
+
+```sql
+-- Enable necessary extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Enum Definitions
+CREATE TYPE access_policy_enum AS ENUM ('public', 'private', 'application_required');
+CREATE TYPE community_status_enum AS ENUM ('draft', 'published', 'suspended', 'archived');
+CREATE TYPE member_role_enum AS ENUM ('visitor', 'member', 'moderator', 'admin', 'creator');
+CREATE TYPE member_status_enum AS ENUM ('pending', 'active', 'paused', 'cancelled', 'banned');
+CREATE TYPE billing_interval_enum AS ENUM ('one_time', 'month', 'year');
+CREATE TYPE subscription_status_enum AS ENUM ('trialing', 'active', 'past_due', 'canceled', 'unpaid');
+CREATE TYPE lesson_type_enum AS ENUM ('video', 'rich_text', 'download', 'quiz');
+CREATE TYPE post_status_enum AS ENUM ('published', 'hidden', 'deleted', 'under_review');
+CREATE TYPE media_type_enum AS ENUM ('avatar', 'cover', 'video_playback', 'attachment');
+
+-- 1. USERS TABLE
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    email_verified_at TIMESTAMPTZ,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    username VARCHAR(50) UNIQUE,
+    bio VARCHAR(150),
+    location VARCHAR(100),
+    avatar_url TEXT,
+    banner_url TEXT,
+    theme_mode VARCHAR(10) DEFAULT 'light' CHECK (theme_mode IN ('light', 'dark')),
+    is_platform_admin BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_username ON users(username);
+
+-- 2. USER SESSIONS TABLE
+CREATE TABLE user_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    refresh_token_hash VARCHAR(255) NOT NULL UNIQUE,
+    user_agent TEXT,
+    ip_address INET,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_sessions_user ON user_sessions(user_id);
+CREATE INDEX idx_sessions_expires ON user_sessions(expires_at);
+
+-- 3. CATEGORIES TABLE
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL UNIQUE,
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    display_order INT DEFAULT 0 NOT NULL
+);
+
+-- 4. COMMUNITIES TABLE
+CREATE TABLE communities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    category_id UUID NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    title VARCHAR(120) NOT NULL,
+    slug VARCHAR(80) NOT NULL UNIQUE,
+    tagline VARCHAR(150),
+    description TEXT,
+    about_markdown TEXT,
+    access_policy access_policy_enum DEFAULT 'public' NOT NULL,
+    status community_status_enum DEFAULT 'published' NOT NULL,
+    cover_image_url TEXT,
+    icon_image_url TEXT,
+    accent_color VARCHAR(10) DEFAULT '#6366f1' NOT NULL,
+    rating_average NUMERIC(3, 2) DEFAULT 5.00 NOT NULL,
+    review_count INT DEFAULT 0 NOT NULL,
+    member_count INT DEFAULT 1 NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_communities_slug ON communities(slug);
+CREATE INDEX idx_communities_category ON communities(category_id);
+CREATE INDEX idx_communities_owner ON communities(owner_id);
+CREATE INDEX idx_communities_discovery ON communities(status, access_policy, member_count DESC);
+
+-- 5. MEMBERSHIP PLANS & PRICING
+CREATE TABLE membership_plans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    amount_cents INT NOT NULL CHECK (amount_cents >= 0),
+    currency VARCHAR(3) DEFAULT 'USD' NOT NULL,
+    billing_interval billing_interval_enum DEFAULT 'month' NOT NULL,
+    trial_days INT DEFAULT 0 NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    stripe_price_id VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_plans_community ON membership_plans(community_id);
+
+-- 6. COMMUNITY MEMBERSHIPS
+CREATE TABLE community_memberships (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role member_role_enum DEFAULT 'member' NOT NULL,
+    status member_status_enum DEFAULT 'active' NOT NULL,
+    current_plan_id UUID REFERENCES membership_plans(id) ON DELETE SET NULL,
+    joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT uq_user_community UNIQUE(community_id, user_id)
+);
+
+CREATE INDEX idx_memberships_community ON community_memberships(community_id, status);
+CREATE INDEX idx_memberships_user ON community_memberships(user_id);
+
+-- 7. COURSES & CLASSROOM
+CREATE TABLE courses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    cover_image_url TEXT,
+    display_order INT DEFAULT 0 NOT NULL,
+    is_published BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE course_modules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    display_order INT DEFAULT 0 NOT NULL
+);
+
+CREATE TABLE lessons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    module_id UUID NOT NULL REFERENCES course_modules(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    lesson_type lesson_type_enum DEFAULT 'video' NOT NULL,
+    video_playback_id TEXT,
+    video_duration_seconds INT DEFAULT 0,
+    content_markdown TEXT,
+    display_order INT DEFAULT 0 NOT NULL,
+    is_free_preview BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE lesson_progress (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    completed_at TIMESTAMPTZ,
+    last_position_seconds INT DEFAULT 0,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id, lesson_id)
+);
+
+-- 8. POSTS & DISCUSSIONS
+CREATE TABLE posts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(200),
+    body_markdown TEXT NOT NULL,
+    status post_status_enum DEFAULT 'published' NOT NULL,
+    is_pinned BOOLEAN DEFAULT FALSE NOT NULL,
+    comment_count INT DEFAULT 0 NOT NULL,
+    like_count INT DEFAULT 0 NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_posts_community_feed ON posts(community_id, is_pinned DESC, created_at DESC);
+
+CREATE TABLE comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    parent_comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    status post_status_enum DEFAULT 'published' NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_comments_post ON comments(post_id, created_at ASC);
+
+-- 9. USER CONTRIBUTIONS (HEATMAP ENGINE)
+CREATE TABLE user_contributions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    community_id UUID REFERENCES communities(id) ON DELETE CASCADE,
+    activity_type VARCHAR(50) NOT NULL, -- 'post', 'comment', 'lesson_complete'
+    activity_date DATE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_contributions_user_date ON user_contributions(user_id, activity_date);
+
+-- 10. DIRECT MESSAGES & REALTIME CHAT
+CREATE TABLE conversations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE conversation_participants (
+    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    last_read_at TIMESTAMPTZ,
+    PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE TABLE direct_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_messages_conversation ON direct_messages(conversation_id, created_at DESC);
+
+-- 11. TRANSACTIONAL OUTBOX TABLE
+CREATE TABLE outbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type VARCHAR(100) NOT NULL,
+    aggregate_type VARCHAR(50) NOT NULL,
+    aggregate_id UUID NOT NULL,
+    payload JSONB NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' NOT NULL CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    retry_count INT DEFAULT 0 NOT NULL,
+    last_error TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    processed_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_outbox_pending ON outbox_events(status, created_at ASC) WHERE status = 'pending';
+```
+
+---
+
+## 7. Versioned API Contracts & Real-Time Specifications
+
+### 7.1 Standard RESTful Endpoints (`/api/v1`)
+
+All REST endpoints follow standard JSON request/response conventions and use standard RFC 7807 problem details for errors.
+
+#### Authentication & Sessions
+- `POST /api/v1/auth/register`: Create user account and issue session cookies.
+- `POST /api/v1/auth/login`: Authenticate email/password via Argon2id.
+- `POST /api/v1/auth/refresh`: Rotate refresh token and issue new access token.
+- `POST /api/v1/auth/logout`: Revoke active session token.
+- `POST /api/v1/auth/logout-all`: Invalidate all active sessions for user.
+
+#### Community Catalog & Discovery
+- `GET /api/v1/communities`: Query paginated communities with filters (`category`, `price_type`, `access_policy`, `sort`, `q`, `page`, `limit`).
+- `GET /api/v1/communities/:slug`: Retrieve full public community details, ratings, media gallery, and creator metadata.
+- `POST /api/v1/communities`: Create new community (requires active subscription or trial entitlement).
+- `PATCH /api/v1/communities/:id`: Update community settings (Title, Slug, Cover, Icon, Description).
+- `DELETE /api/v1/communities/:id`: Soft-delete community and cancel active billing.
+
+#### Memberships & Billing
+- `POST /api/v1/communities/:id/join`: Join free/public community.
+- `POST /api/v1/communities/:id/checkout`: Initialize Stripe checkout session for paid community.
+- `POST /api/v1/communities/:id/leave`: Cancel membership in community.
+- `GET /api/v1/memberships/me`: List all communities joined/owned by current user.
+- `POST /api/v1/webhooks/stripe`: Idempotent Stripe webhook receiver.
+
+#### Classroom & Courses
+- `GET /api/v1/communities/:id/courses`: List courses and modules for a community.
+- `GET /api/v1/lessons/:id`: Fetch lesson video stream URL or markdown content (verified against user membership).
+- `POST /api/v1/lessons/:id/progress`: Record user progress or mark lesson completed.
+
+#### Social & Discussion Feed
+- `GET /api/v1/communities/:id/posts`: Paginated community feed filtered by topic.
+- `POST /api/v1/communities/:id/posts`: Publish post with rich text and attachment IDs.
+- `POST /api/v1/posts/:id/comments`: Add comment to post.
+- `POST /api/v1/posts/:id/reactions`: Toggle emoji reaction on post.
+
+#### Profile & Contributions
+- `GET /api/v1/users/:username`: Fetch public user profile and bio.
+- `GET /api/v1/users/:username/contributions?community_id=all`: Fetch 365-day contribution heatmap array (`[{ date: '2026-03-01', count: 4, level: 2 }]`).
+- `PATCH /api/v1/users/me`: Update profile details (Name, Bio, Location, Avatar).
+
+---
+
+### 7.2 Real-Time Events (Server-Sent Events / WebSocket)
+
+SkillSpace utilizes Server-Sent Events (SSE) for downstream client updates and WebSockets for low-latency bidirectional chat:
 
 ```text
-/                         Discovery
-/communities/:slug        Public community detail
-/profile                  Current user profile
-/settings/:section        Account settings
-/login                    Login
-/register                 Registration
-```
-
-Requirements:
-
-- Browser back and forward must work.
-- Refreshing a route must restore the same view.
-- Community pages must have canonical URLs and metadata.
-- Unknown routes must render a not-found state.
-- Protected routes must redirect safely without losing the original destination.
-- Query parameters must represent search, filters, sort, and pagination.
-
-## 7. Domain Model
-
-### 7.1 User
-
-```text
-User
-- id: UUID
-- email: normalized string, unique
-- emailVerifiedAt: timestamp nullable
-- displayName: string
-- username: string, unique nullable
-- bio: string nullable
-- location: string nullable
-- avatarMediaId: UUID nullable
-- status: derived presence state
-- createdAt: timestamp
-- updatedAt: timestamp
-- deletedAt: timestamp nullable
-```
-
-Authentication secrets, recovery tokens, and sessions must not be returned by ordinary user queries.
-
-### 7.2 Community
-
-```text
-Community
-- id: UUID
-- slug: string, unique
-- ownerUserId: UUID
-- title: string
-- description: string
-- categoryId: UUID
-- status: draft | review | published | suspended | archived
-- accessPolicy: public | private | application_required
-- coverMediaId: UUID nullable
-- createdAt: timestamp
-- publishedAt: timestamp nullable
-- updatedAt: timestamp
-```
-
-The owner is not the same as a global administrator. Roles are scoped to a community.
-
-### 7.3 Community membership
-
-```text
-Membership
-- id: UUID
-- communityId: UUID
-- userId: UUID
-- role: member | moderator | creator
-- status: pending | active | paused | cancelled | banned
-- planId: UUID nullable
-- entitlementExpiresAt: timestamp nullable
-- joinedAt: timestamp nullable
-- leftAt: timestamp nullable
-- createdAt: timestamp
-- updatedAt: timestamp
-```
-
-A unique constraint on active membership identity must prevent accidental duplicate memberships. Membership status and payment status must not be inferred from client data.
-
-### 7.4 Plans and money
-
-```text
-MembershipPlan
-- id: UUID
-- communityId: UUID
-- name: string
-- amountMinor: integer
-- currency: ISO currency code
-- interval: one_time | month | year
-- active: boolean
-- providerPriceId: string nullable
-
-Payment
-- id: UUID
-- userId: UUID
-- communityId: UUID
-- provider: string
-- providerPaymentId: string
-- amountMinor: integer
-- currency: ISO currency code
-- status: pending | succeeded | failed | refunded | disputed
-- createdAt: timestamp
-```
-
-Never store `$9 / month` as the only price representation. Display values must be derived from structured amounts.
-
-### 7.5 Posts and moderation
-
-```text
-Post
-- id: UUID
-- communityId: UUID
-- authorUserId: UUID
-- body: validated rich text or plain text
-- status: published | hidden | deleted | under_review
-- createdAt: timestamp
-- updatedAt: timestamp
-
-Comment
-- id: UUID
-- postId: UUID
-- parentCommentId: UUID nullable
-- authorUserId: UUID
-- body: validated text
-- status: published | hidden | deleted
-- createdAt: timestamp
-- updatedAt: timestamp
-
-ModerationAction
-- id: UUID
-- communityId: UUID
-- actorUserId: UUID
-- targetType: post | comment | user | community
-- targetId: UUID
-- action: hide | restore | warn | suspend | ban
-- reason: string
-- createdAt: timestamp
-```
-
-Content state must be explicit. Deleting an item from the UI must not erase audit evidence where retention policy requires it.
-
-### 7.6 Learning
-
-```text
-Course
-- id: UUID
-- communityId: UUID
-- title: string
-- description: string
-- status: draft | published | archived
-
-Lesson
-- id: UUID
-- courseId: UUID
-- title: string
-- type: video | text | download | external
-- position: integer
-- requiredEntitlement: boolean
-- publishedAt: timestamp nullable
-
-LessonProgress
-- userId: UUID
-- lessonId: UUID
-- completedAt: timestamp nullable
-- resumePositionSeconds: integer
-- updatedAt: timestamp
-```
-
-Progress is user- and lesson-scoped. It must not be stored as a single mutable level number without event or history support.
-
-### 7.7 Notifications and messaging
-
-```text
-Conversation
-- id: UUID
-- type: direct | community
-- createdAt: timestamp
-
-ConversationParticipant
-- conversationId: UUID
-- userId: UUID
-- lastReadAt: timestamp nullable
-
-Message
-- id: UUID
-- conversationId: UUID
-- senderUserId: UUID
-- body: validated text
-- createdAt: timestamp
-- deletedAt: timestamp nullable
-
-Notification
-- id: UUID
-- userId: UUID
-- type: post | message | membership | payment | system
-- payload: validated JSON
-- readAt: timestamp nullable
-- createdAt: timestamp
-```
-
-Unread counts are derived from server state or a cache that can be rebuilt. They must not be trusted from a browser badge.
-
-## 8. Backend Module Boundaries
-
-Each module must own its use cases, policies, repositories, database mappings, and events.
-
-### 8.1 Identity module
-
-Owns:
-
-- Registration.
-- Email verification.
-- Login and logout.
-- Password reset.
-- Session rotation and revocation.
-- Account deletion and export requests.
-- Identity-provider integration later.
-
-It must not decide whether a user can post or access a paid lesson.
-
-### 8.2 Authorization module
-
-Owns:
-
-- Resource-scoped permission checks.
-- Community roles.
-- Platform roles.
-- Moderation scope.
-- Policy evaluation helpers.
-
-Authorization must be checked in the application layer and enforced again at sensitive repository boundaries where practical.
-
-### 8.3 Discovery module
-
-Owns:
-
-- Public community listing.
-- Search query parsing.
-- Category and price facets.
-- Stable sorting.
-- Cursor pagination.
-- Trending calculation.
-- Visibility filtering.
-
-Only published communities that satisfy visibility rules may appear in public discovery.
-
-### 8.4 Community module
-
-Owns:
-
-- Community creation.
-- Draft and publication lifecycle.
-- Branding and slug changes.
-- Owner and moderator configuration.
-- Community settings.
-- Community archival and suspension.
-
-### 8.5 Membership module
-
-Owns:
-
-- Join requests.
-- Free membership activation.
-- Paid membership entitlement.
-- Private-community approval.
-- Leave, cancellation, pause, ban, and reactivation.
-- Entitlement checks.
-
-This module is the authority for access to community resources.
-
-### 8.6 Social module
-
-Owns:
-
-- Posts.
-- Comments.
-- Reactions.
-- Bookmarks.
-- Reports.
-- Moderation actions.
-- Content visibility.
-
-### 8.7 Learning module
-
-Owns:
-
-- Courses.
-- Sections and lessons.
-- Publication state.
-- Entitlement checks through the membership contract.
-- Progress and completion.
-
-### 8.8 Billing module
-
-Owns:
-
-- Plans.
-- Checkout initiation.
-- Provider customer references.
-- Webhook verification.
-- Payment state normalization.
-- Refunds and cancellations.
-- Creator revenue ledger.
-- Payout state.
-
-The billing module must never grant access solely because a checkout request was initiated. Access changes only after a verified provider result or approved free-membership operation.
-
-### 8.9 Messaging and notification module
-
-Owns:
-
-- Conversation creation.
-- Message permissions.
-- Read state.
-- In-app notification creation.
-- Email notification jobs.
-- User notification preferences.
-- Delivery failure tracking.
-
-## 9. API Contract
-
-### 9.1 API rules
-
-- Prefix public contracts with `/api/v1`.
-- Validate every request at the boundary.
-- Return one documented error shape.
-- Use opaque identifiers rather than leaking internal database assumptions.
-- Paginate every potentially large collection.
-- Use idempotency keys for payment and other retryable mutations.
-- Return authorization-safe representations.
-- Version breaking changes.
-- Generate or maintain an OpenAPI contract.
-
-### 9.2 Example endpoints
-
-```text
-GET    /api/v1/communities
-GET    /api/v1/communities/:slug
-POST   /api/v1/communities
-PATCH  /api/v1/communities/:id
-POST   /api/v1/communities/:id/publish
-
-POST   /api/v1/auth/register
-POST   /api/v1/auth/login
-POST   /api/v1/auth/logout
-POST   /api/v1/auth/password-reset
-GET    /api/v1/session
-
-GET    /api/v1/me
-PATCH  /api/v1/me/profile
-GET    /api/v1/me/memberships
-GET    /api/v1/me/notifications
-
-POST   /api/v1/communities/:id/join
-POST   /api/v1/communities/:id/checkout
-DELETE /api/v1/communities/:id/membership
-
-GET    /api/v1/communities/:id/posts
-POST   /api/v1/communities/:id/posts
-POST   /api/v1/posts/:id/comments
-POST   /api/v1/posts/:id/reactions
-POST   /api/v1/posts/:id/reports
-
-GET    /api/v1/courses/:id
-POST   /api/v1/lessons/:id/progress
-GET    /api/v1/conversations
-POST   /api/v1/conversations/:id/messages
-
-POST   /api/v1/billing/webhooks/provider
-```
-
-### 9.3 Error shape
-
-```json
-{
-  "error": {
-    "code": "MEMBERSHIP_REQUIRED",
-    "message": "You need an active membership to perform this action.",
-    "requestId": "request-id"
-  }
+Event: chat.message_created
+Data: {
+  "conversationId": "c39a832e-...",
+  "messageId": "m91823a-...",
+  "sender": { "id": "u18...", "name": "Sarah Connor", "avatar": "https://..." },
+  "body": "Welcome to the group!",
+  "createdAt": "2026-09-09T21:55:00Z"
+}
+
+Event: notification.dispatched
+Data: {
+  "id": "n81920-...",
+  "type": "post_mention",
+  "title": "New mention",
+  "message": "Alex mentioned you in General Discussion",
+  "targetUrl": "/c/tech-masters/feed#post-123"
+}
+
+Event: community.feed_updated
+Data: {
+  "communityId": "comm-8192...",
+  "postId": "p-01823...",
+  "action": "new_post"
 }
 ```
 
-Messages may be user-friendly, but clients must branch on stable error codes rather than parsing prose.
+---
 
-## 10. Storage and Persistence
+## 8. Security, Identity & RBAC Architecture
 
-### 10.1 Development adapter
+### 8.1 Zero-Trust Defense Matrix
 
-The prototype may keep a local adapter for offline visual development, but it must implement the same interface as the API-backed repository.
-
-```js
-communityRepository.list(query)
-communityRepository.getBySlug(slug)
-profileRepository.getCurrent()
-profileRepository.update(changes)
-postRepository.list(communityId, cursor)
-postRepository.create(communityId, body)
+```mermaid
+flowchart LR
+    Request[Incoming HTTPS Request] --> WAF[WAF / Cloudflare]
+    WAF --> RateLimit[Redis Token Bucket Rate Limiter]
+    RateLimit --> CorsCsp[Strict CORS & CSP Validation]
+    CorsCsp --> AuthN[Authentication: Session Cookie / JWT]
+    AuthN --> InputVal[Zod Schema Input Sanitization]
+    InputVal --> RBAC[Community-Scoped RBAC Authorizer]
+    RBAC --> BusinessLogic[Domain Service Execution]
+    BusinessLogic --> DB[(PostgreSQL Parameterized Queries)]
 ```
 
-The UI must depend on these interfaces, not on `localStorage` keys.
+1. **Password Security**: Server-side hashing utilizing **Argon2id** (`m=65536, t=3, p=4`). Client-side SHA-256 is deprecated in favor of raw TLS transport to the hashing authority.
+2. **Session Security**: Session tokens are 256-bit cryptographically secure identifiers stored in `HttpOnly; Secure; SameSite=Strict` cookies. Refresh tokens are stored in PostgreSQL with SHA-256 digests and rotated on every exchange.
+3. **Cross-Site Request Forgery (CSRF)**: Double-Submit Cookie pattern paired with custom header validation (`X-Requested-With: SkillSpaceApp`).
+4. **Content Security Policy (CSP)**:
+   ```http
+   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com https://*.r2.cloudflarestorage.com https://randomuser.me; connect-src 'self' wss://*.skillspace.in https://api.stripe.com;
+   ```
+5. **Community-Scoped RBAC Authorization**:
+   Every resource request evaluates permissions dynamically against the active community context:
 
-### 10.2 Production database
-
-Use PostgreSQL as the transactional source of truth because the product has relational workflows involving:
-
-- Users and identities.
-- Community ownership.
-- Role-scoped memberships.
-- Plans and entitlements.
-- Payments and refunds.
-- Courses and progress.
-- Moderation and audit records.
-
-Required database practices:
-
-- Migration files checked into source control.
-- Foreign keys for owned relationships.
-- Unique constraints for email, username, slug, provider event IDs, and active membership identity.
-- Indexes designed from real query patterns.
-- Explicit timestamps in UTC.
-- Soft deletion only where product and retention policy require it.
-- Transaction boundaries documented for money and access changes.
-- Seed data separate from production data.
-
-### 10.3 Cache rules
-
-Redis may be used for:
-
-- Short-lived discovery cache.
-- Rate limiting.
-- Distributed locks.
-- Queue coordination.
-- Presence and ephemeral unread counters.
-
-Redis must not be the source of truth for:
-
-- Payments.
-- Membership status.
-- Entitlements.
-- User identity.
-- Moderation history.
-
-### 10.4 Outbox and jobs
-
-When a database mutation needs asynchronous work, write the business mutation and an outbox event in one database transaction. A worker publishes or processes the event with retry and deduplication behavior.
-
-Examples:
-
-- User registered -> send verification email.
-- Membership activated -> create welcome notification.
-- Payment succeeded -> update entitlement and send receipt.
-- Community published -> update discovery index.
-- Media uploaded -> scan and generate image variants.
-
-## 11. Authentication and Security
-
-### 11.1 Authentication requirements
-
-- Hash passwords on the server with Argon2id.
-- Never send password hashes to the browser.
-- Normalize and verify email addresses.
-- Use secure, HttpOnly, SameSite cookies for browser sessions.
-- Rotate session identifiers after login and privilege changes.
-- Support session revocation by device.
-- Expire recovery tokens quickly and only once.
-- Rate-limit login, registration, recovery, and code-login requests.
-- Use generic login failure messages to reduce account enumeration.
-- Log security events without logging passwords or raw tokens.
-
-### 11.2 Authorization requirements
-
-Every protected operation must answer:
-
-1. Who is the caller?
-2. What resource is being accessed?
-3. What role or entitlement does the caller have for that resource?
-4. Is the resource in an allowed lifecycle state?
-5. Is the operation allowed by policy?
-
-Do not use a global `isAdmin` flag. A user can be a creator in one community, a moderator in another, and an ordinary member elsewhere.
-
-### 11.3 Input and output safety
-
-- Validate lengths, formats, enums, and relationships at the API boundary.
-- Sanitize or safely render rich text.
-- Encode output by default.
-- Apply a Content Security Policy.
-- Configure CORS narrowly.
-- Add CSRF protection for cookie-authenticated mutations.
-- Protect against request replay where money or sensitive mutations are involved.
-- Never trust client-provided role, price, member count, owner ID, or entitlement fields.
-
-### 11.4 Media safety
-
-- Upload through a server-issued presigned URL.
-- Validate file size and MIME type server-side.
-- Do not trust the filename extension.
-- Scan uploads for malware.
-- Generate controlled image variants.
-- Store media metadata in the database.
-- Use signed delivery for private content.
-- Use responsive image URLs and lazy loading.
-
-## 12. Discovery Architecture
-
-### 12.1 Query model
-
-Discovery queries should support:
-
-```text
-q
-category
-accessPolicy
-priceType
-minPrice
-maxPrice
-sort=trending|top|newest
-cursor
-limit
+```typescript
+// Authorization Rule Matrix
+const PERMISSIONS = {
+  VISITOR: ['community:read_public', 'about:read'],
+  MEMBER: ['community:read_public', 'about:read', 'feed:read', 'feed:post', 'comment:create', 'classroom:view', 'chat:send'],
+  MODERATOR: ['...MEMBER', 'post:delete', 'comment:delete', 'member:warn', 'member:suspend'],
+  ADMIN: ['...MODERATOR', 'course:create', 'course:edit', 'settings:edit', 'member:ban'],
+  CREATOR: ['...ADMIN', 'community:delete', 'payouts:manage', 'plans:manage']
+};
 ```
 
-The browser should serialize these values into the URL. The API should validate them and return:
+---
 
-```json
-{
-  "items": [],
-  "nextCursor": null,
-  "facets": {
-    "categories": [],
-    "priceRanges": []
-  }
-}
+## 9. Asynchronous Processing & Outbox Engine
+
+To prevent data inconsistencies between PostgreSQL and external services (Stripe, Resend, Cloudflare R2, Search Indexer), SkillSpace implements the **Transactional Outbox Pattern**:
+
+```mermaid
+flowchart TD
+    subgraph TransactionScope ["PostgreSQL ACID Transaction"]
+        Mutation["Create Post / Join Community Mutation"]
+        OutboxInsert["INSERT INTO outbox_events (status: 'pending')"]
+        Mutation --> OutboxInsert
+    end
+
+    subgraph OutboxWorkerProcess ["Outbox Relay & Worker Process"]
+        Poller["Outbox Poller / CDC Listener"]
+        Queue["BullMQ Redis Queue"]
+        Handler["Event Handlers"]
+    end
+
+    subgraph ExternalServices ["External Service Adapters"]
+        EmailService["SES / Resend Email API"]
+        SearchIndex["PostgreSQL Full-Text / Meilisearch"]
+        PushNotifier["Web Push Notification Gateway"]
+    end
+
+    OutboxInsert -. Committed .-> Poller
+    Poller --> Queue
+    Queue --> Handler
+    Handler --> EmailService & SearchIndex & PushNotifier
 ```
 
-### 12.2 Search behavior
+### 9.1 Background Job Queue Tasks
+- `email:send_welcome_email`: Triggered on user registration.
+- `email:send_trial_expiring`: Triggered 3 days prior to 14-day trial end.
+- `media:process_image`: Resizes uploaded avatars/covers into WebP formats (Thumb, Card, Banner) using Sharp.
+- `media:transcode_video`: Processes classroom video uploads into adaptive HLS streams.
+- `search:sync_community_document`: Updates the search index upon community metadata changes.
+- `affiliate:calculate_commission`: Credits referring creators with 40% monthly recurring commissions upon successful subscription renewal.
 
-Initial search may use PostgreSQL full-text search over title, description, creator name, and category. Add a dedicated search system only when measurements show a need for typo tolerance, autocomplete, relevance tuning, or faceting at larger scale.
+---
 
-Search must:
+## 10. Comprehensive Verification & Quality Assurance Matrix
 
-- Normalize case and whitespace.
-- Define minimum query length.
-- Avoid unbounded wildcard scans.
-- Use stable ranking and tie-breaking.
-- Respect publication and visibility rules.
-- Record search analytics without storing unnecessary personal data.
+| Test Level | Scope & Framework | Target Coverage | Key Validations |
+| :--- | :--- | :--- | :--- |
+| **Unit Tests** | Vitest | > 95% Pure Logic | - Money value object conversions & calculations<br>- RBAC permission matrix evaluators<br>- Search query sanitizers & markdown parsers |
+| **Integration Tests** | Vitest + Testcontainers (PostgreSQL & Redis) | > 85% API & Repositories | - User registration & Argon2id password verification<br>- Community creation & slug collision handling<br>- Transactional outbox event creation & status polling |
+| **Contract Tests** | Vitest + Stripe Mock | 100% External Hooks | - Stripe `customer.subscription.created/updated/deleted`<br>- Stripe Connect account payout events |
+| **E2E Journeys** | Playwright (Chromium, Firefox, WebKit) | 100% Core Flows | - **Journey 1**: Discovery -> Filter -> Community Detail -> Free Join -> View Feed<br>- **Journey 2**: Create Community Landing -> 3D Carousel -> Plan Select -> Trial Checkout -> Setup Group Checklist<br>- **Journey 3**: Profile -> View Heatmap -> Edit Profile Settings -> Toggle Dark Mode |
+| **Load & Stress** | k6 | 10,000 Concurrent VUs | - Discovery page response < 80ms p95 under 5,000 req/s<br>- SSE/WebSocket message latency < 50ms under 10,000 connected clients |
+| **Accessibility (a11y)**| axe-core + Playwright a11y | Zero Critical Violations | - Full keyboard navigation (Tab/Shift-Tab focus traps in modals)<br>- Contrast ratios ≥ 4.5:1 in Light and Dark themes<br>- Proper ARIA labels on all icon-only buttons |
 
-### 12.3 Sorting and trending
+---
 
-Member counts, revenue, and activity must be stored as structured numeric values. Trending must be a defined calculation, not a label that happens to preserve array order.
+## 11. Progressive Migration Roadmap (Prototype to Production)
 
-Document the initial formula and version it when it changes. Include a stable secondary sort so pagination does not duplicate or skip records.
-
-## 13. Payments and Entitlements
-
-### 13.1 Checkout flow
-
-1. The browser requests checkout for a selected plan.
-2. The API verifies the community and plan are active.
-3. The API creates a provider checkout session using server-owned prices.
-4. The browser completes payment with the provider.
-5. The provider sends a signed webhook.
-6. The webhook handler verifies the signature and deduplicates the event.
-7. The billing module records payment state in a transaction.
-8. The membership module activates or updates entitlement.
-9. A notification and receipt job are queued.
-10. The browser refreshes server state.
-
-### 13.2 Rules
-
-- Never trust a price from the browser.
-- Never activate paid access from a client redirect alone.
-- Store provider event IDs uniquely.
-- Make webhook handling idempotent.
-- Support refunds, disputes, cancellations, and failed renewals.
-- Keep a revenue ledger separate from the current balance.
-- Reconcile provider records with the database periodically.
-- Audit manual adjustments.
-
-## 14. Messaging and Notifications
-
-### 14.1 Messaging
-
-The first messaging release should define:
-
-- Who can initiate a conversation.
-- Whether membership is required.
-- Blocking behavior.
-- Reporting behavior.
-- Message size and attachment limits.
-- Read-state semantics.
-- Retention and deletion rules.
-
-Start with ordinary API polling or a managed realtime adapter. Do not make every screen depend on a custom websocket service before the message model and moderation model are stable.
-
-### 14.2 Notifications
-
-Notifications should be generated from domain events and delivered through separate channels:
-
-- In-app inbox.
-- Email.
-- Push later.
-
-Users need preferences, quiet hours, read state, and delivery failure visibility. Notification payloads must be validated and versioned so old records remain renderable after UI changes.
-
-## 15. Accessibility and UX Quality
-
-Production readiness includes usability for keyboard and assistive-technology users.
-
-Required standards:
-
-- Semantic headings in order.
-- One clear page title per route.
-- Labels associated with every form control.
-- Visible focus indicators.
-- Keyboard-operable menus, dialogs, tabs, and carousels.
-- Correct dialog roles and focus management.
-- Escape key behavior for dismissible overlays.
-- Screen-reader announcements for errors, saves, new posts, and toast messages.
-- Sufficient color contrast.
-- No information conveyed by color alone.
-- Reduced-motion behavior.
-- Touch targets large enough for mobile use.
-- No essential workflow hidden behind hover.
-- Loading and error states that do not cause layout collapse.
-
-## 16. CSS and Design System Architecture
-
-The stylesheet should be reorganized into stable layers:
-
-```text
-styles/
-  tokens.css       colors, spacing, type, radii, shadows
-  reset.css        browser normalization
-  base.css         body, typography, focus, forms
-  layout.css       shell, grids, responsive containers
-  components.css   buttons, cards, menus, dialogs, inputs
-  features.css     discovery, profile, settings, detail pages
-  utilities.css    small intentional utilities
+```mermaid
+gantt
+    title SkillSpace Production Migration Roadmap
+    dateFormat  YYYY-MM-DD
+    section Phase 1: Client Modularization
+    Refactor src/main.js to Feature Modules      :p1_1, 2026-09-10, 5d
+    Implement HTML5 Client Router & History      :p1_2, after p1_1, 3d
+    Component Library & Design Tokens Isolation  :p1_3, after p1_2, 3d
+    section Phase 2: Backend & Database Foundation
+    PostgreSQL Schemas & Migrations Setup        :p2_1, 2026-09-15, 4d
+    Fastify Modular Monolith Server Scaffold    :p2_2, after p2_1, 3d
+    Argon2id Auth & Session Cookie Engine        :p2_3, after p2_2, 4d
+    section Phase 3: Domain API Migrations
+    Discovery & Community Detail Endpoints       :p3_1, 2026-09-24, 4d
+    Profiles, Settings & Heatmap API             :p3_2, after p3_1, 3d
+    Feed, Posts & Comments Engine                :p3_3, after p3_2, 4d
+    section Phase 4: Monetization & Realtime
+    Stripe Checkout, Trials & Webhooks           :p4_1, 2026-10-03, 5d
+    Realtime Messaging & SSE Notifications       :p4_2, after p4_1, 4d
+    Classroom Courses & Video Stream Player      :p4_3, after p4_2, 4d
+    section Phase 5: Verification & Launch
+    Playwright E2E Suite & a11y Audits           :p5_1, 2026-10-15, 4d
+    k6 Load Testing & Observability Dashboards   :p5_2, after p5_1, 3d
+    Production Deployment & Zero-Downtime Cutover:p5_3, after p5_2, 2d
 ```
 
-Rules:
-
-- Define each selector's primary behavior once.
-- Avoid repeated later overrides for the same component.
-- Use semantic tokens instead of scattered literal colors.
-- Keep responsive rules next to the component they modify or in a clearly documented responsive layer.
-- Do not let visual experimentation overwrite production states accidentally.
-- Test narrow, medium, and wide viewports.
-- Include disabled, focus, hover, error, loading, and empty states.
-
-## 17. Testing Strategy
-
-### 17.1 Unit tests
-
-Cover pure behavior:
-
-- Search query normalization.
-- Category, price, and access filtering.
-- Stable sorting.
-- Cursor encoding and decoding.
-- Money formatting.
-- Membership eligibility.
-- Role and permission policies.
-- Progress calculations.
-- Notification preference decisions.
-- Input validation.
-
-### 17.2 Integration tests
-
-Cover module and repository boundaries:
-
-- Registration and email verification state.
-- Session creation, rotation, expiry, and revocation.
-- Community publication rules.
-- Free membership activation.
-- Paid entitlement activation after a verified webhook.
-- Private-community approval.
-- Post creation and moderation.
-- Profile updates persisting correctly.
-- Notification creation through outbox processing.
-
-### 17.3 Contract tests
-
-Verify that web clients and API responses agree on:
-
-- Success shapes.
-- Error codes.
-- Pagination.
-- Enum values.
-- Optional and nullable fields.
-- Authentication failure behavior.
-
-### 17.4 End-to-end tests
-
-At minimum:
-
-1. Visitor searches and filters communities.
-2. Visitor opens a shareable community route.
-3. Visitor registers and verifies the account.
-4. Member joins a free community.
-5. Member completes a lesson and sees progress.
-6. Member creates a post and receives a notification.
-7. Creator creates and publishes a community.
-8. Paid checkout activates access only after a simulated verified webhook.
-9. Moderator hides and restores reported content.
-10. User updates profile and sees the update after refresh.
-11. User logs out and protected routes are inaccessible.
-
-### 17.5 Accessibility and visual tests
-
-- Run automated accessibility checks in CI.
-- Test keyboard-only navigation for all dialogs and menus.
-- Add visual snapshots for discovery, detail, profile, settings, auth, loading, empty, and error states.
-- Test desktop, tablet, and mobile viewport layouts.
-- Use deterministic fixtures rather than random generated data in snapshots.
-
-### 17.6 Load and resilience tests
-
-Measure:
-
-- Public discovery p95 latency.
-- Search p95 latency.
-- Authenticated profile reads.
-- Post creation under concurrency.
-- Notification queue throughput.
-- Payment webhook retry behavior.
-- Database connection pool utilization.
-- Cache hit ratio.
-
-Test degraded dependencies:
-
-- Database slow or unavailable.
-- Email provider unavailable.
-- Payment provider delayed.
-- Queue worker stopped.
-- Search adapter unavailable.
-- Object storage upload failure.
-
-## 18. Observability and Operations
-
-### 18.1 Logging
-
-Use structured logs with:
-
-- Timestamp.
-- Severity.
-- Service and module.
-- Request ID.
-- User ID when safe.
-- Resource ID when safe.
-- Operation name.
-- Duration.
-- Outcome and error code.
-
-Do not log passwords, raw session tokens, payment secrets, full private messages, or unnecessary personal data.
-
-### 18.2 Metrics
-
-Track:
-
-- Request count, error count, and latency by route.
-- Authentication success and failure rates.
-- Rate-limit events.
-- Discovery result counts and empty searches.
-- Membership activation and cancellation rates.
-- Payment success, failure, refund, and webhook lag.
-- Queue depth, retries, and dead letters.
-- Database query latency and pool saturation.
-- Media processing failures.
-- Notification delivery success.
-
-### 18.3 Alerts and runbooks
-
-Every alert must state:
-
-- What is broken.
-- How severe it is.
-- Who owns it.
-- How to confirm the problem.
-- How to mitigate it.
-- How to recover.
-- What follow-up is required.
-
-### 18.4 Backup and recovery
-
-- Automated encrypted database backups.
-- Point-in-time recovery where supported.
-- Restore testing at least quarterly.
-- Documented recovery point objective.
-- Documented recovery time objective.
-- Object storage versioning and lifecycle rules.
-- Recovery access tested independently of the primary credentials.
-
-## 19. Delivery and CI/CD
-
-### 19.1 Required checks for every change
-
-- Formatting.
-- Linting.
-- Type checking.
-- Unit tests.
-- Integration tests for changed modules.
-- API contract validation.
-- Accessibility checks for changed UI.
-- Production build.
-- Dependency and secret scanning.
-
-### 19.2 Deployment process
-
-1. Build immutable artifacts.
-2. Run migrations in a controlled, backward-compatible step.
-3. Deploy the application.
-4. Run smoke tests.
-5. Monitor error and latency metrics.
-6. Gradually enable risky features with flags.
-7. Roll back application code if necessary.
-8. Roll back data changes only through a tested migration strategy.
-
-### 19.3 Environment separation
-
-Maintain separate:
-
-- Local development.
-- Test or CI.
-- Staging.
-- Production.
-
-Production data must never be copied into development without approved anonymization. Environment secrets must come from a secret manager or deployment platform, not checked-in files.
-
-## 20. Migration Plan From the New Prototype
-
-### Phase 0: Freeze the product contract
-
-- Decide which old prototype surfaces are retained: chat, notifications, profile, settings, and community creation.
-- Document route names and terminology.
-- Convert random generated data into deterministic fixtures.
-- Record the current prototype as a baseline visual and behavioral snapshot.
-
-Exit criteria:
-
-- Product surface inventory is approved.
-- Baseline screenshots and smoke tests exist.
-- No new feature is added directly to the monolithic entry file.
-
-### Phase 1: Split the client monolith
-
-- Move application state into `app-state.js`.
-- Move route decisions into `router.js`.
-- Move discovery into a feature module.
-- Move auth and modal behavior into an authentication module.
-- Move profile and settings into feature modules.
-- Extract reusable header, card, modal, form, and empty-state components.
-- Replace inline HTML event handlers with module listeners.
-
-Exit criteria:
-
-- `main.js` only composes the application.
-- Each feature can be tested without rendering the entire application.
-- No feature reads localStorage directly.
-
-### Phase 2: Introduce contracts and repositories
-
-- Define domain schemas and structured values.
-- Create repository interfaces.
-- Keep a local adapter for prototype mode.
-- Add validation at repository boundaries.
-- Synchronize profile updates, user records, and session identity.
-- Add unit and integration tests.
-
-Exit criteria:
-
-- Price and member counts are structured.
-- Profile updates survive refresh and subsequent login.
-- Invalid stored data produces a recoverable error state.
-- Tests cover filtering, auth, profile updates, and posts.
-
-### Phase 3: Add the backend modular monolith
-
-- Create the versioned API.
-- Add PostgreSQL migrations.
-- Add identity and session services.
-- Add community and discovery endpoints.
-- Add membership and post endpoints.
-- Replace the local repository with an API repository behind the same interface.
-- Add OpenAPI or generated schema contracts.
-
-Exit criteria:
-
-- The browser does not own authentication.
-- A second browser sees the same community and post state.
-- Protected API operations reject unauthorized requests.
-- Database constraints prevent duplicate identity and membership records.
-
-### Phase 4: Payments, media, jobs, and moderation
-
-- Integrate the payment provider through a billing adapter.
-- Implement verified idempotent webhooks.
-- Add entitlement transactions.
-- Add object storage and media processing.
-- Add outbox events and workers.
-- Add reports, moderation actions, and audit events.
-- Add notification preferences and delivery tracking.
-
-Exit criteria:
-
-- Paid access is granted only from verified payment state.
-- Webhook retries do not duplicate payments or entitlements.
-- Private media cannot be fetched without authorization.
-- Moderation actions are auditable.
-
-### Phase 5: Production hardening
-
-- Run accessibility review.
-- Run load and resilience tests.
-- Configure dashboards and alerts.
-- Exercise backup restoration.
-- Exercise rollback and incident procedures.
-- Complete dependency, secret, and penetration reviews.
-- Gradually release with feature flags.
-
-Exit criteria:
-
-- Production SLOs are measured and met.
-- Critical journeys have automated end-to-end coverage.
-- Recovery procedures work in rehearsal.
-- On-call ownership is explicit.
-
-## 21. Production Readiness Checklist
-
-### Product and data
-
-- [ ] User roles and permissions are documented.
-- [ ] Community lifecycle states are implemented.
-- [ ] Membership and entitlement rules are implemented.
-- [ ] Pricing and currency are structured.
-- [ ] Data retention and deletion policies are approved.
-- [ ] Seed and fixture data are deterministic.
-
-### Application
-
-- [ ] URL routing supports refresh and browser navigation.
-- [ ] Loading, empty, error, retry, and success states exist.
-- [ ] No critical feature depends on a browser-global function.
-- [ ] No critical feature reads localStorage directly.
-- [ ] User-generated content is safely rendered.
-- [ ] Client state cannot grant access.
-
-### Security
-
-- [ ] Server-side authentication is active.
-- [ ] Passwords use a memory-hard hash.
-- [ ] Sessions are secure, rotated, expirable, and revocable.
-- [ ] Authorization is resource-scoped.
-- [ ] CSRF, CORS, CSP, and rate limits are configured.
-- [ ] Uploads are validated and scanned.
-- [ ] Secrets are managed outside source control.
-- [ ] Security events are audited.
-
-### Payments
-
-- [ ] Provider webhooks are signature-verified.
-- [ ] Webhooks are idempotent.
-- [ ] Payment states and entitlements are transactional.
-- [ ] Refunds, cancellations, disputes, and failed renewals are handled.
-- [ ] Reconciliation jobs exist.
-
-### Quality
-
-- [ ] Unit tests cover domain rules.
-- [ ] Integration tests cover repositories and transactions.
-- [ ] Contract tests validate API shapes.
-- [ ] End-to-end tests cover critical user journeys.
-- [ ] Accessibility tests run in CI.
-- [ ] Load tests have been run against representative data.
-- [ ] Dependency and secret scans pass.
-
-### Operations
-
-- [ ] Structured logs and request IDs are available.
-- [ ] Metrics and traces cover critical workflows.
-- [ ] Alerts have owners and runbooks.
-- [ ] Backups are automated.
-- [ ] Restore tests have passed.
-- [ ] Rollback has been rehearsed.
-- [ ] Incident response contacts are documented.
-- [ ] SLOs, RPO, and RTO are measured rather than assumed.
-
-## 22. Definition of Done for 10/10
-
-The SkillSpace architecture may be rated 10/10 only when:
-
-1. The web client is feature-oriented and no longer depends on a monolithic entry module.
-2. The browser consumes stable, validated API contracts.
-3. Identity, permissions, memberships, payments, and entitlements are server-authoritative.
-4. PostgreSQL is the transactional source of truth.
-5. External providers are isolated behind adapters and verified webhook flows.
-6. Large collections are paginated and indexed.
-7. User-generated content and media have safe handling paths.
-8. Critical behavior has unit, integration, contract, end-to-end, and accessibility coverage.
-9. Logs, metrics, traces, backups, alerts, runbooks, and rollback procedures are operational.
-10. The team has demonstrated recovery from realistic failures.
-
-Until those conditions are met, the system should be described as a prototype or staging system, regardless of how polished the interface looks.
-
-## 23. Architectural Decision Summary
-
-- Use a modular monolith first.
-- Keep the new prototype's ES-module direction.
-- Split the current entry module by feature and application responsibility.
-- Use real URL routing.
-- Represent domain values structurally, not as display strings.
-- Put server state behind typed repository interfaces.
-- Use PostgreSQL for transactional data.
-- Use Redis only for ephemeral or coordination concerns.
-- Use an outbox and durable workers for asynchronous work.
-- Use a payment provider through a verified adapter.
-- Treat memberships and entitlements as security-sensitive domain state.
-- Preserve the useful product surfaces from the old prototype while replacing global implementation patterns.
-- Measure before extracting services or adding specialized infrastructure.
-
-This architecture gives SkillSpace a credible path from a visually convincing prototype to a secure, testable, observable, and maintainable production platform.
+### Phase 1: Client Modularization & Decoupling
+- Break down `src/main.js` into feature modules (`src/features/*`), UI components (`src/components/*`), and domain entities (`src/domain/*`).
+- Replace `state.view` with the HTML5 history router (`src/app/router.js`).
+- Introduce the HTTP client infrastructure with local mock fallback during migration.
+
+### Phase 2: Backend Foundation & Persistence
+- Deploy PostgreSQL 16 and Redis instances.
+- Execute SQL migrations to initialize the core schema.
+- Implement the Fastify backend modular server with structured routing and Argon2id session authentication.
+
+### Phase 3: Domain Service & API Integration
+- Connect the client discovery, detail, profile, and settings features to live `/api/v1` endpoints.
+- Migrate seed fixtures from `data.js` into PostgreSQL seed migration scripts.
+- Implement server-side contribution heatmap calculations.
+
+### Phase 4: Monetization, Media & Realtime Gateways
+- Integrate Stripe Billing and Connect for 14-day free trials and creator monetization.
+- Deploy Cloudflare R2 / S3 storage adapters for profile photos and community covers.
+- Launch the WebSocket/SSE gateway for live direct messages and notifications.
+
+### Phase 5: Production Hardening, Verification & Release
+- Execute complete Playwright E2E test suites and accessibility audits.
+- Deploy OpenTelemetry tracing, Prometheus metrics, and automated database WAL backups.
+- Complete load testing with k6 and initiate zero-downtime production cutover.
