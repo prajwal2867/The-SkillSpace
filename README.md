@@ -1,111 +1,91 @@
 # SkillSpace
 
-SkillSpace is an all-in-one online platform designed for creators, coaches, and educators to host community discussions, online courses, and event calendars in a single location.
+SkillSpace is a browser-based prototype for discovering, joining, and creating online communities for creators, coaches, educators, and learners. The current build focuses on validating the product experience and visual language before the planned production migration.
 
-### Core Mission & Purpose
+## Current Progress
 
-1. **Unifying Creators & Learners**:
-   - Creators can showcase their bootcamps, masterclasses, and private mastermind rooms.
-   - Learners can easily discover top-rated communities across diverse fields such as AI, Web Development, Short-Form Editing, Marketing, Fitness, and Design.
+The Vite prototype currently includes:
 
-2. **Full-Featured Prototype Experience**:
-   - **Community Discovery**: Browse curated rooms filtered by categories (*Tech, Money, Hobbies, Self-improvement*), access model (*Free vs. Paid*, *Public vs. Private*), and activity level (*Trending / Top*).
-   - **Deep Dive Pages**: Explore comprehensive community landing pages featuring video/media galleries, structured curriculum checklists, member metrics, and verified student reviews.
-   - **Gamification & Activity Tracking**: Track member participation with a GitHub-style 365-day contribution heat map and member badges.
-   - **Realistic Prototype Data**: Powered by an integrated dataset of 70+ dummy users, realistic course feedback, live activity feeds, and chat notifications to simulate a thriving production environment.
+- Community discovery with category, price, access, search, and sorting filters.
+- Community detail pages with media galleries, curriculum highlights, reviews, creator information, and membership actions.
+- Login, registration, password recovery, and code-login prototype dialogs.
+- Local profile and settings screens, including profile editing, contribution heatmaps, theme switching, affiliates, notifications, chat, and payment settings surfaces.
+- Local join/leave membership state and profile membership views.
+- Community creation flow with plan selection, a prototype checkout form, and a creator community setup page.
+- Local post creation, chat notifications, and seeded community activity.
+- Responsive styling with light/dark themes, CSS design tokens, and vanilla JavaScript ES modules.
 
-3. **High-Performance Lightweight Architecture**:
-   - Demonstrates state management, dynamic DOM rendering, theme switching (Light/Dark mode), and local storage persistence using pure **Vanilla JavaScript (ES Modules)** and **Vanilla CSS tokens**, bundled with Vite for ultra-fast performance.
-
----
-
-## Features
-
-- **Discover & Filter Communities**:
-  - Filter communities by category (*Tech, Hobbies, Money, Health, Self-improvement, Spirituality, Music, etc.*).
-  - Multi-attribute filtering by price (*Free / Paid*), access type (*Public / Private*), and sorting criteria (*Trending / Top*).
-  - Instant client-side search across titles, descriptions, and categories.
-
-- **Immersive Community View**:
-  - Detailed overview pages featuring video/media galleries, structured curriculum highlights, and about sections.
-  - Authentic course reviews and member feedback linked to realistic dummy user profiles.
-  - Creator profiles detailing background, bio, avatar, and credentials.
-  - One-click join/leave group flow with member counts and online activity indicators.
-  - Convenient topbar navigation with an SVG back button for seamless page transitions.
-
-- **User Management & Profiles**:
-  - Interactive profile dashboard with a GitHub-style 365-day contribution heat map.
-  - Profile settings editor (name, bio, location, avatar updates, theme customization).
-  - Dropdown user menu with quick access to settings, affiliates, language options, and account controls.
-  - Persisted user sessions via LocalStorage (`store.js`).
-
-- **Dark Mode & Theme System**:
-  - Built-in theme switcher with CSS variable design tokens supporting seamless Light and Dark modes.
-
-- **Generated Dummy Data**:
-  - Integrated dataset of 70+ synthetic user profiles, realistic community reviews, activity logs, and chat notifications.
-
----
+This is not production authentication, billing, authorization, or shared community storage. User data, sessions, posts, memberships, and created communities are stored in the browser with `localStorage`; checkout does not charge a real payment method.
 
 ## Tech Stack
 
-- **Frontend Core**: JavaScript (ES6+ Modules), HTML5
-- **Styling**: Vanilla CSS3 (Custom Properties / Design Tokens, Flexbox, CSS Grid, Transitions)
-- **Tooling & Bundler**: [Vite](https://vitejs.dev/)
-- **Typography**: Inter (Google Fonts)
-
----
+- JavaScript ES modules and HTML5
+- Vanilla CSS with custom properties, Flexbox, and CSS Grid
+- [Vite](https://vitejs.dev/) for development and production builds
+- Inter from Google Fonts
 
 ## Project Structure
 
 ```text
 The SkillSpace/
 ├── src/
-│   ├── domain/
-│   │   └── data.js           # Categories, initial communities, demo users, & reviews
-│   ├── services/
-│   │   └── store.js          # LocalStorage persistence & session management
-│   ├── main.js               # Application state, UI components, rendering & event handling
-│   └── styles.css            # Core design tokens, global styles, animations & layout
-├── dummy_data.js             # 70+ pre-generated user profiles, posts, & course datasets
-├── generate_data.js          # Generator script for mock datasets
-├── index.html                # Main entry HTML document
-├── package.json              # Project dependencies & Vite scripts
+│   ├── domain/data.js       # Categories, communities, demo users, reviews, chats, and notifications
+│   ├── services/store.js    # Browser localStorage persistence adapter
+│   ├── main.js              # Application state, rendering, routing, and event handling
+│   └── styles.css           # Design tokens, responsive layout, and component styles
+├── docs/
+│   ├── development_goals.md
+│   ├── system_architecture_1.md
+│   └── system_architecture_2.md
+├── dummy_data.js            # Generated users and prototype activity data
+├── generate_data.js         # Mock data generator
+├── generate_users.js        # User fixture generator
+├── index.html               # Vite entry document
+├── package.json              # Project scripts and dependencies
 └── README.md                 # Project documentation
 ```
-
----
 
 ## Getting Started
 
 ### Prerequisites
 
-Make sure you have **Node.js** (v16 or higher) and **npm** installed on your system.
+- Node.js `20.19+` or `22.12+`
+- npm
 
-### Installation
+### Install and run
 
-1. Clone the repository:
-   ```bash
-   https://github.com/prajwal2867/The-SkillSpace.git
-   cd The-SkillSpace
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-### Development Server
-
-Start the local development server with instant HMR (Hot Module Replacement):
 ```bash
+npm install
 npm run dev
 ```
-Open your browser and navigate to `http://localhost:5173`.
 
----
+Open the local URL printed by Vite, normally `http://localhost:5173`.
+
+### Production build
+
+```bash
+npm run build
+npm run preview
+```
+
+The current production build completes successfully with Vite.
+
+## Data and Prototype Behavior
+
+The application imports seeded community and user data from `src/domain/data.js` and `dummy_data.js`. The generator scripts use random values, so generated fixtures should be treated as demo data rather than deterministic test fixtures. Browser state is kept under versioned `skillspace_*` localStorage keys; clearing site storage resets the local session and created content.
+
+## Roadmap
+
+The architecture documents describe the planned migration from this browser prototype to a modular monolith with:
+
+- A real client feature/domain structure and URL routing.
+- Validated contracts and repository interfaces.
+- Server-side identity, authorization, memberships, entitlements, and payments.
+- PostgreSQL as the transactional source of truth, with Redis and durable jobs where needed.
+- Tests, accessibility checks, observability, moderation, media handling, and operational safeguards.
+
+See [`docs/development_goals.md`](docs/development_goals.md) for the staged delivery plan and [`docs/system_architecture_2.md`](docs/system_architecture_2.md) for the target production architecture.
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check out the issues page if you want to contribute.
-
+Keep prototype changes focused on validating product behavior. When adding production-oriented functionality, follow the boundaries and exit criteria in the development goals before expanding `src/main.js`.
