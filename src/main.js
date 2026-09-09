@@ -66,7 +66,7 @@ function header() {
   </div>
   ` : '';
 
-  const backButton = isDetail ? `
+  const backButton = state.view === 'detail' ? `
     <button class="topbar-back-btn" data-action="discover" title="Go back to Home" aria-label="Go back to home page">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     </button>
@@ -122,10 +122,13 @@ function header() {
 
   const isJoined = activeComm ? (state.joinedCommunities || []).includes(activeComm.id) : false;
 
-  const subTabs = (isDetail && isJoined) ? `
+  const subnavTabs = state.view === 'creator-community'
+    ? ['Community', 'Classroom', 'Members', 'Leaderboards', 'About']
+    : ['Community', 'Classroom', 'Calendar', 'Members', 'Map', 'Leaderboards', 'About'];
+  const subTabs = (isDetail && (isJoined || state.view === 'creator-community')) ? `
     <div class="community-subnav-bar">
       <div class="subnav-container">
-        ${['Community', 'Classroom', 'Calendar', 'Members', 'Map', 'Leaderboards', 'About'].map(tab => `
+        ${subnavTabs.map(tab => `
           <button class="subnav-tab ${state.communityTab === tab ? 'active' : ''}" data-action="select-subnav-tab" data-tab="${tab}">${tab}</button>
         `).join('')}
       </div>

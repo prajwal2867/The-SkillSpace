@@ -20,7 +20,7 @@
   </div>
   `:``,o=`
     <div class="brand-container" id="brandContainer">
-      ${n?`
+      ${f.view===`detail`?`
     <button class="topbar-back-btn" data-action="discover" title="Go back to Home" aria-label="Go back to home page">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     </button>
@@ -68,10 +68,10 @@
         </button>
       </div>
     </div>
-  `,s=t?(f.joinedCommunities||[]).includes(t.id):!1,c=n&&s?`
+  `,s=t?(f.joinedCommunities||[]).includes(t.id):!1,c=f.view===`creator-community`?[`Community`,`Classroom`,`Members`,`Leaderboards`,`About`]:[`Community`,`Classroom`,`Calendar`,`Members`,`Map`,`Leaderboards`,`About`],l=n&&(s||f.view===`creator-community`)?`
     <div class="community-subnav-bar">
       <div class="subnav-container">
-        ${[`Community`,`Classroom`,`Calendar`,`Members`,`Map`,`Leaderboards`,`About`].map(e=>`
+        ${c.map(e=>`
           <button class="subnav-tab ${f.communityTab===e?`active`:``}" data-action="select-subnav-tab" data-tab="${e}">${e}</button>
         `).join(``)}
       </div>
@@ -104,7 +104,7 @@
           `}
         </div>
       </div>
-      ${c}
+      ${l}
     </header>
   `}function C(){let e=r.find(e=>e.id===f.selected)||r[0],t=String(e.id).startsWith(`created-`),n=!!(e.description&&e.description!==`A private community for creators.`),i=!!e.cover,a=[n,i].filter(Boolean).length,o=d.user||{name:`Creator`},s=o.pfp||e.creatorAvatar;return`
     <main class="creator-community-page">
