@@ -76,6 +76,8 @@ The application imports seeded community and user data from `src/domain/data.js`
 
 ## Roadmap
 
+Future development plans and detailed product direction are documented in the docs folder, particularly in the architecture and development goals notes.
+
 The architecture documents describe the planned migration from this browser prototype to a modular monolith with:
 
 - A real client feature/domain structure and URL routing.
