@@ -76,3 +76,35 @@ test('sensitive routes return 429 and retry headers after their configured limit
     await new Promise((resolve, reject) => limitedServer.close((error) => error ? reject(error) : resolve()));
   }
 });
+
+test('trusted proxy hops determine the identity used by rate limits', async () => {
+  const keys = [];
+  const proxyServer = createApiServer({
+    trustedProxyHops: 1,
+    rateLimiter: {
+      async consume(key) {
+        keys.push(key);
+        return { allowed: true, limit: 5, remaining: 4, resetSeconds: 60 };
+      }
+    }
+  });
+  await new Promise((resolve) => proxyServer.listen(0, '127.0.0.1', resolve));
+  const proxyOrigin = `http://127.0.0.1:${proxyServer.address().port}`;
+
+  try {
+    const response = await fetch(`${proxyOrigin}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: 'http://localhost:5173',
+        'x-forwarded-for': '198.51.100.10'
+      },
+      body: JSON.stringify({ email: 'invalid', password: 'short', name: 'A' })
+    });
+    assert.equal(response.status, 400);
+    assert.equal(keys[0], 'authRegister:198.51.100.10');
+  } finally {
+    proxyServer.closeIdleConnections();
+    await new Promise((resolve, reject) => proxyServer.close((error) => error ? reject(error) : resolve()));
+  }
+});

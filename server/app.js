@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { inTransaction, pool } from './db.js';
-import { clearSessionCookie, HttpError, parseCookies, readJson, sendJson, sessionCookie, validateOrigin } from './http.js';
+import { clearSessionCookie, clientAddress, HttpError, parseCookies, readJson, sendJson, sessionCookie, validateOrigin } from './http.js';
 import { createMemoryRateLimiter, enforceRateLimit } from './rate-limit.js';
 import { hashPassword, hashSessionToken, verifyPassword } from './security.js';
 
@@ -18,6 +18,14 @@ function positiveInteger(value, fallback) {
   if (value === undefined) return fallback;
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 1) throw new Error('Rate limit configuration must be a positive integer.');
+  return parsed;
+}
+
+function proxyHopCount(value = process.env.TRUSTED_PROXY_HOPS) {
+  if (value === undefined) return 0;
+  if (!/^\d+$/.test(String(value))) throw new Error('TRUSTED_PROXY_HOPS must be a whole number from 0 to 10.');
+  const parsed = Number(value);
+  if (parsed > 10) throw new Error('TRUSTED_PROXY_HOPS must be a whole number from 0 to 10.');
   return parsed;
 }
 
@@ -112,14 +120,14 @@ function communityIdFromPath(pathname, segment) {
   }
 }
 
-async function handle(request, response, rateLimiter, policies) {
+async function handle(request, response, rateLimiter, policies, trustedProxyHops) {
   const url = new URL(request.url, 'http://localhost');
   const { pathname, searchParams } = url;
   const method = request.method || 'GET';
 
   const group = rateLimitGroup(method, pathname);
   if (group) {
-    const address = request.socket.remoteAddress || 'unknown';
+    const address = clientAddress(request, trustedProxyHops);
     const headers = await enforceRateLimit(
       rateLimiter,
       `${group}:${address}`,
@@ -327,10 +335,14 @@ async function handle(request, response, rateLimiter, policies) {
   throw new HttpError(404, 'not_found', 'Route was not found.');
 }
 
-export function createApiServer({ rateLimiter = createMemoryRateLimiter(), rateLimits = rateLimitPolicies() } = {}) {
+export function createApiServer({
+  rateLimiter = createMemoryRateLimiter(),
+  rateLimits = rateLimitPolicies(),
+  trustedProxyHops = proxyHopCount()
+} = {}) {
   return createServer(async (request, response) => {
     try {
-      await handle(request, response, rateLimiter, rateLimits);
+      await handle(request, response, rateLimiter, rateLimits, trustedProxyHops);
     } catch (error) {
       if (response.headersSent) {
         response.destroy(error);

@@ -1,3 +1,5 @@
+import { isIP } from 'node:net';
+
 export class HttpError extends Error {
   constructor(status, code, message, headers = {}) {
     super(message);
@@ -70,4 +72,18 @@ export function validateOrigin(request) {
   if (!origin || origin !== allowedOrigin) {
     throw new HttpError(403, 'invalid_origin', 'Request origin is not allowed.');
   }
+}
+
+export function clientAddress(request, trustedProxyHops = 0) {
+  const socketAddress = request.socket.remoteAddress || 'unknown';
+  if (trustedProxyHops === 0) return socketAddress;
+
+  const forwardedFor = request.headers['x-forwarded-for'];
+  if (typeof forwardedFor !== 'string') return socketAddress;
+
+  const chain = forwardedFor.split(',').map((address) => address.trim());
+  if (chain.length < trustedProxyHops || chain.some((address) => isIP(address) === 0)) {
+    throw new HttpError(400, 'invalid_forwarded_for', 'The trusted proxy sent an invalid client address chain.');
+  }
+  return chain[chain.length - trustedProxyHops];
 }
