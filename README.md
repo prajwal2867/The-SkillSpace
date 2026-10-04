@@ -49,7 +49,7 @@ The SkillSpace/
 
 ### Prerequisites
 
-- Node.js `20.19+` or `22.12+`
+- Node.js `22.12+`
 - npm
 
 ### Install and run
@@ -60,6 +60,50 @@ npm run dev
 ```
 
 Open the local URL printed by Vite, normally `http://localhost:5173`.
+
+## Local API and PostgreSQL
+
+The first server-backed slice uses PostgreSQL for accounts, cookie sessions, community memberships, and posts. The included Compose setup runs a local development database with non-production credentials:
+
+```bash
+docker compose up -d db
+Copy-Item .env.example .env
+```
+
+The default `.env.example` connection string matches this local database. For a manually installed PostgreSQL instance, replace it with your local connection string.
+
+Run the database setup once:
+
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
+Start the API and web client in separate terminals:
+
+```bash
+npm run dev:api
+npm run dev
+```
+
+Vite proxies `/api` calls to the API on port 3000. The browser only receives a random `HttpOnly` session cookie; password hashes, authentication, membership checks, and post persistence stay server-side. For production, terminate TLS, set `APP_ORIGIN` to the exact public origin, keep `DATABASE_URL` secret, and tune `PG_POOL_MAX` against the database connection budget.
+
+The API supports registration/login/logout, session restore, public community catalog reads, free/public membership join/leave, and member-only feed reads/writes. Paid membership checkout, email verification, password recovery, distributed rate limiting, and production deployment configuration are not implemented in this slice.
+
+### PostgreSQL integration test
+
+The end-to-end database test uses a separate ephemeral PostgreSQL container and refuses to run unless the configured database name ends in `_test`:
+
+```bash
+docker compose --profile integration up -d --wait test-db
+Copy-Item .env.test.example .env.test
+npm run db:migrate:test
+npm run db:seed:test
+npm run test:integration
+docker compose --profile integration down
+```
+
+The integration test creates and cleans up a uniquely named user and community. It verifies registration, cookie sessions, membership enforcement, feed persistence, membership reads, and logout against PostgreSQL. Never point `DATABASE_URL` in `.env.test` at a production or shared database.
 
 ### Production build
 

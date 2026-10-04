@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: skillspace
+      POSTGRES_USER: skillspace
+      POSTGRES_PASSWORD: skillspace_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - skillspace-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillspace -d skillspace"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  test-db:
+    image: postgres:16-alpine
+    profiles: ["integration"]
+    environment:
+      POSTGRES_DB: skillspace_test
+      POSTGRES_USER: skillspace
+      POSTGRES_PASSWORD: skillspace_dev
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillspace -d skillspace_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  skillspace-postgres-data:

@@ -1249,10 +1249,10 @@ const dummyCourses = [
   }
 ];
 
-// Expose globally for browser
-window.dummyUsers = dummyUsers;
-window.dummyPosts = dummyPosts;
-window.dummyCourses = dummyCourses;
+if (typeof window !== 'undefined') {
+  window.dummyUsers = dummyUsers;
+  window.dummyPosts = dummyPosts;
+  window.dummyCourses = dummyCourses;
+}
 
 export { dummyUsers, dummyPosts, dummyCourses };
-

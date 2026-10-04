@@ -1,8 +1,14 @@
 import './styles.css';
-import { categories, chats, communities, demoUsers, notifications } from './domain/data.js';
+import { categories, chats, communities, dummyUsers, notifications } from './domain/data.js';
+import { api } from './services/api.js';
 import { store } from './services/store.js';
 
 const state = { view: 'discover', category: 'Trending', price: 'All', access: 'All', sort: 'Trending', query: '', submittedQuery: '', selected: null, settingsTab: 'profile', modal: null, authMode: 'login', profileMenu: false, chatMenu: false, filterMenu: false, authMessage: '', themeMode: 'light', selectedContributionGroup: 'All communities', selectedMediaIndex: 0, communityTab: 'About', joinedCommunities: [], profileCommunityView: 'memberships', planBilling: 'monthly', selectedPlan: null, pendingCommunityMedia: null, cropper: null };
+state.apiReady = false;
+state.apiError = null;
+state.feedPosts = [];
+state.pendingJoinCommunityId = null;
+state.nextCatalogCursor = null;
 store.communities.forEach((community) => {
   const savedCommunity = String(community.id).startsWith('created-') ? { ...community, cover: '', creatorAvatar: '' } : community;
   if (!String(savedCommunity.id).startsWith('created-') || String(savedCommunity.ownerId) === String(store.user?.id)) {
@@ -31,6 +37,7 @@ function syncOwnedCommunities() {
 }
 
 function filteredCommunities() {
+  if (!state.apiReady) return [];
   const query = state.submittedQuery.toLowerCase();
   const result = communities.filter(isVisibleCommunity).filter((community) => (!query || `${community.title} ${community.description} ${community.category}`.toLowerCase().includes(query)) && (state.category === 'Trending' || community.category === state.category) && (state.price === 'All' || community.priceType === state.price) && (state.access === 'All' || community.accessType === state.access));
   if (state.sort === 'Top') result.sort((a, b) => parseFloat(b.members) - parseFloat(a.members));
@@ -180,22 +187,28 @@ function creatorCommunityView() {
     <main class="creator-community-page">
       <div class="creator-community-layout">
         <section class="creator-community-main">
-          <div class="creator-composer" data-action="create-post">
-            ${userAvatar ? `<img src="${userAvatar}" alt="${escapeHTML(user.name)}" class="creator-avatar">` : `<span class="creator-avatar creator-avatar-fallback">${initials(user)}</span>`}
-            <span>Write something</span>
-          </div>
+          <form id="postForm" style="display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;">
+            ${userAvatar ? `<img src="${escapeHTML(userAvatar)}" alt="" class="creator-avatar">` : `<span class="creator-avatar creator-avatar-fallback">${escapeHTML(initials(user))}</span>`}
+            <div style="flex:1;display:grid;gap:8px;">
+              <textarea name="text" maxlength="5000" required aria-label="Write a community post" placeholder="Write something for the community..." style="width:100%;min-height:90px;resize:vertical;padding:12px;border-radius:8px;"></textarea>
+              <button class="creator-settings-cta" type="submit" style="justify-self:end;">PUBLISH POST</button>
+            </div>
+          </form>
+          <section class="creator-feed-posts" aria-live="polite">
+            ${state.feedPosts.length ? state.feedPosts.map((post) => `<article class="setup-card" style="margin-bottom:12px;"><strong>${escapeHTML(post.author_name)}</strong><time style="margin-left:10px;color:#858990;font-size:12px;">${escapeHTML(new Date(post.created_at).toLocaleString())}</time><p style="white-space:pre-wrap;">${escapeHTML(post.content)}</p></article>`).join('') : '<p class="text-secondary">No posts yet. Start the conversation.</p>'}
+          </section>
           <div class="creator-feed-toolbar">
             <button class="creator-filter active">All</button>
             <button class="creator-filter">General discussion</button>
             <button class="creator-settings-button" aria-label="Filter posts">☷</button>
           </div>
-          <section class="setup-card">
+          ${isCreatedCommunity ? `<section class="setup-card">
             <div class="setup-card-heading"><span class="setup-progress ${completedSetupItems ? 'has-progress' : ''}" style="--setup-progress:${completedSetupItems * 25}%" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#invite-people">Invite 3 people</a></div>
             <div class="setup-item ${hasDescription ? 'is-complete' : ''}"><span class="setup-circle">${hasDescription ? '✓' : ''}</span><a href="#group-description" data-action="community-settings">Add group description</a></div>
             <div class="setup-item ${hasCover ? 'is-complete' : ''}"><span class="setup-circle">${hasCover ? '✓' : ''}</span><a href="#cover-image" data-action="community-settings">Set cover image</a></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#first-post">Write your first post</a></div>
-          </section>
+          </section>` : ''}
         </section>
         <aside class="creator-community-sidebar">
           <div class="creator-group-card">
@@ -1261,11 +1274,11 @@ function modalCardContent() {
           </div>
           <div class="skool-field-container">
             <label class="skool-floating-label">Password</label>
-            <input type="password" name="password" class="skool-input" minlength="8" required placeholder="">
+            <input type="password" name="password" class="skool-input" minlength="12" required placeholder="">
           </div>
           <div class="skool-field-container">
             <label class="skool-floating-label">Confirm Password</label>
-            <input type="password" name="confirmPassword" class="skool-input" minlength="8" required placeholder="">
+            <input type="password" name="confirmPassword" class="skool-input" minlength="12" required placeholder="">
           </div>
           <p class="terms" style="color:#858990; font-size:12px; margin-bottom:16px;">By signing up, you accept our <u style="color:#aaa">terms</u> and <u style="color:#aaa">privacy policy</u>.</p>
           <button type="submit" class="SkillSpace-btn-primary">SIGN UP</button>
@@ -1490,33 +1503,39 @@ function bindAuth() {
       const email = data.email.trim().toLowerCase();
       if (!email || !data.password || (state.authMode === 'register' && (!data.firstName?.trim() || !data.lastName?.trim() || !data.confirmPassword))) return setAuthMessage('All fields are required.');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAuthMessage('Please enter a valid email address.');
-      if (data.password.length < 8) return setAuthMessage('Password must be at least 8 characters.');
+      if (data.password.length < 12) return setAuthMessage('Password must be at least 12 characters.');
       if (state.authMode === 'register' && data.password !== data.confirmPassword) return setAuthMessage('Passwords do not match.');
-      const passwordHash = await hashPassword(data.password);
-      if (state.authMode === 'register') {
-        if (findAuthUser(email, passwordHash) || store.findUser(email)) return setAuthMessage('An account with this email already exists.');
-        const newUser = { id: crypto.randomUUID(), name: `${data.firstName.trim()} ${data.lastName.trim()}`, email, passwordHash, bio: 'Curious, learning in public.' };
-        store.saveUser(newUser);
-        state.authMode = 'login';
-        state.authMessage = { text: 'Account created successfully. Log in to continue.', type: 'success' };
-        backdrop.innerHTML = modalCardContent();
-        bindAuth();
-        return;
-      }
-      const user = findAuthUser(email, passwordHash) || store.findUser(email);
-      if (!user || user.passwordHash !== passwordHash) return setAuthMessage('Invalid email or password.');
-      store.saveSession(user);
-      syncOwnedCommunities();
-      refreshHeader();
-      if (state.selectedPlan) {
-        state.modal = 'plan';
-        state.authMessage = '';
-        const backdrop = document.querySelector('.modal-backdrop');
-        backdrop.innerHTML = modalCardContent();
-        bindAuth();
-      } else {
-        closeAuthModal();
-        showToast('Welcome back');
+      const submit = authForm.querySelector('[type="submit"]');
+      submit.disabled = true;
+      try {
+        const result = state.authMode === 'register'
+          ? await api.post('/auth/register', {
+            email,
+            password: data.password,
+            name: `${data.firstName.trim()} ${data.lastName.trim()}`
+          })
+          : await api.post('/auth/login', { email, password: data.password });
+        store.user = result.user;
+        const { memberships } = await api.get('/me/memberships');
+        state.joinedCommunities = memberships.map((membership) => /^\d+$/.test(membership.communityId) ? Number(membership.communityId) : membership.communityId);
+        refreshHeader();
+        const joinedPendingCommunity = await completePendingJoin();
+        if (joinedPendingCommunity) {
+          closeAuthModal();
+          render();
+          showToast(`Joined ${communities.find((community) => community.id === state.selected)?.title || 'community'}!`);
+        } else if (state.selectedPlan) {
+          state.modal = 'plan';
+          state.authMessage = '';
+          backdrop.innerHTML = modalCardContent();
+          bindAuth();
+        } else {
+          closeAuthModal();
+          showToast(state.authMode === 'register' ? 'Account created' : 'Welcome back');
+        }
+      } catch (error) {
+        setAuthMessage(error.message);
+        submit.disabled = false;
       }
     };
   }
@@ -1663,6 +1682,41 @@ function render() {
   const app = document.querySelector('#app');
   const body = state.view === 'discover' ? discoverView() : state.view === 'create-community' ? createCommunityView() : state.view === 'select-plan' ? selectPlanView() : state.view === 'detail' ? detailView() : state.view === 'creator-community' ? creatorCommunityView() : state.view === 'profile' ? profileView() : settingsView();
   app.innerHTML = `${header()}${body}<div class="toast" id="toast"></div>`;
+  if (state.view === 'discover' && !state.apiReady) {
+    const grid = app.querySelector('.community-grid');
+    if (grid) {
+      grid.innerHTML = `<div class="empty"><strong>${state.apiError ? 'Communities could not be loaded.' : 'Loading communities…'}</strong><p>${state.apiError ? escapeHTML(state.apiError) : 'Connecting to SkillSpace.'}</p>${state.apiError ? '<button class="outline-button" data-action="retry-api">RETRY</button>' : ''}</div>`;
+      grid.querySelector('[data-action="retry-api"]')?.addEventListener('click', () => {
+        state.apiError = null;
+        void restoreSession().then(render).catch((error) => {
+          state.apiError = error.message;
+          render();
+          if (state.apiReady) showToast(`Your account session could not be restored: ${error.message}`);
+        });
+      });
+    }
+  }
+  if (state.view === 'discover' && state.apiReady && state.nextCatalogCursor) {
+    const grid = app.querySelector('.community-grid');
+    if (grid) {
+      const loadMore = document.createElement('button');
+      loadMore.type = 'button';
+      loadMore.className = 'outline-button';
+      loadMore.textContent = 'LOAD MORE COMMUNITIES';
+      loadMore.style.cssText = 'display:block;margin:24px auto;';
+      loadMore.addEventListener('click', async () => {
+        loadMore.disabled = true;
+        try {
+          await loadCommunityCatalog(state.nextCatalogCursor);
+          render();
+        } catch (error) {
+          showToast(error.message);
+          loadMore.disabled = false;
+        }
+      });
+      grid.after(loadMore);
+    }
+  }
   document.body.classList.toggle('theme-dark', state.themeMode === 'dark');
   document.body.classList.toggle('chat-open', state.chatMenu);
   document.body.classList.toggle('page-pure-white', state.view === 'create-community' || state.view === 'select-plan');
@@ -1686,10 +1740,111 @@ function closeAuthModal() {
   setTimeout(finish, 240);
 }
 function refreshHeader() { const currentHeader = document.querySelector('.topbar-wrapper'); if (!currentHeader) return; currentHeader.outerHTML = header(); document.querySelectorAll('.topbar-wrapper [data-action]').forEach((element) => element.addEventListener('click', () => actions(element.dataset.action, element))); }
-async function hashPassword(password) { const bytes = new TextEncoder().encode(password); const digest = await crypto.subtle.digest('SHA-256', bytes); return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(''); }
-function findAuthUser(email, passwordHash) { return [...store.users, ...demoUsers].find((user) => user.email.toLowerCase() === email.toLowerCase() && user.passwordHash === passwordHash); }
 function setAuthMessage(text, type = 'error') { state.authMessage = { text, type }; const message = document.querySelector('.auth-message'); if (message) { message.textContent = text; message.className = `auth-message ${type}`; } else { const backdrop = document.querySelector('.modal-backdrop'); if (backdrop) { backdrop.innerHTML = modalCardContent(); bindAuth(); } } }
-function restoreSession() { const session = store.session; if (!session?.token || !store.user || !session.expiresAt || Date.now() >= session.expiresAt) store.clearSession(); }
+async function loadCommunityCatalog(cursor = null) {
+  const query = new URLSearchParams({ limit: '24' });
+  if (cursor) query.set('cursor', cursor);
+  if (state.submittedQuery) query.set('q', state.submittedQuery);
+  if (state.category !== 'Trending') query.set('category', state.category);
+  if (state.price !== 'All') query.set('priceType', state.price);
+  if (state.access !== 'All') query.set('accessType', state.access);
+  const page = await api.get(`/communities?${query}`);
+  const catalog = page.communities.map((community) => ({
+    ...community,
+    id: /^\d+$/.test(community.id) ? Number(community.id) : community.id
+  }));
+  const createdCommunities = communities.filter((community) => String(community.id).startsWith('created-'));
+  if (cursor) {
+    communities.push(...catalog);
+  } else {
+    communities.splice(0, communities.length, ...catalog, ...createdCommunities);
+  }
+  state.nextCatalogCursor = page.nextCursor;
+  state.apiReady = true;
+}
+
+async function restoreSession() {
+  await loadCommunityCatalog();
+  const { user } = await api.get('/me');
+  store.user = user;
+  if (user) {
+    const { memberships } = await api.get('/me/memberships');
+    state.joinedCommunities = memberships.map((membership) => /^\d+$/.test(membership.communityId) ? Number(membership.communityId) : membership.communityId);
+  } else {
+    state.joinedCommunities = [];
+  }
+  state.apiError = null;
+}
+
+async function refreshCommunityCatalog() {
+  try {
+    await loadCommunityCatalog();
+    render();
+  } catch (error) {
+    state.apiError = error.message;
+    if (!state.apiReady) render();
+    else showToast(error.message);
+  }
+}
+
+async function loadCommunityFeed(communityId) {
+  const { posts } = await api.get(`/communities/${encodeURIComponent(communityId)}/posts`);
+  state.feedPosts = posts;
+}
+
+async function completePendingJoin() {
+  const communityId = state.pendingJoinCommunityId;
+  state.pendingJoinCommunityId = null;
+  if (!communityId) return false;
+  await api.post(`/communities/${encodeURIComponent(communityId)}/membership`, {});
+  if (!state.joinedCommunities.includes(communityId)) state.joinedCommunities.push(communityId);
+  state.selected = communityId;
+  state.view = 'creator-community';
+  await loadCommunityFeed(communityId);
+  return true;
+}
+
+async function joinSelectedCommunity() {
+  const community = communities.find((item) => item.id === state.selected);
+  if (!community) return;
+  try {
+    await api.post(`/communities/${encodeURIComponent(community.id)}/membership`, {});
+    if (!state.joinedCommunities.includes(community.id)) state.joinedCommunities.push(community.id);
+    state.view = 'creator-community';
+    await loadCommunityFeed(community.id);
+    render();
+    showToast(`Joined ${community.title}!`);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function leaveSelectedCommunity() {
+  const community = communities.find((item) => item.id === state.selected);
+  if (!community) return;
+  try {
+    await api.delete(`/communities/${encodeURIComponent(community.id)}/membership`);
+    state.joinedCommunities = state.joinedCommunities.filter((id) => id !== community.id);
+    state.feedPosts = [];
+    state.view = 'detail';
+    render();
+    showToast(`Left ${community.title}`);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function logoutUser() {
+  try {
+    await api.post('/auth/logout', {});
+    store.clearSession();
+    state.joinedCommunities = [];
+    state.feedPosts = [];
+    render();
+  } catch (error) {
+    showToast(error.message);
+  }
+}
 
 function bind() {
   document.querySelectorAll('[data-auth]:not(.modal-backdrop [data-auth])').forEach((element) => element.addEventListener('click', () => { state.authMode = element.dataset.auth; state.modal = 'auth'; mountAuthModal(); }));
@@ -1697,10 +1852,14 @@ function bind() {
     event.stopPropagation();
     actions(element.dataset.action, element);
   }));
-  document.querySelectorAll('[data-category]').forEach((element) => element.addEventListener('click', () => { state.category = element.dataset.category; render(); }));
+  document.querySelectorAll('[data-category]').forEach((element) => element.addEventListener('click', () => {
+    state.category = element.dataset.category;
+    state.nextCatalogCursor = null;
+    void refreshCommunityCatalog();
+  }));
   document.querySelector('#search')?.addEventListener('input', (event) => { state.query = event.target.value; });
-  document.querySelector('#search')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); state.submittedQuery = state.query.trim(); render(); } });
-  document.querySelector('#topSearch')?.addEventListener('submit', (event) => { event.preventDefault(); state.submittedQuery = state.query.trim(); render(); });
+  document.querySelector('#search')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); state.submittedQuery = state.query.trim(); state.nextCatalogCursor = null; void refreshCommunityCatalog(); } });
+  document.querySelector('#topSearch')?.addEventListener('submit', (event) => { event.preventDefault(); state.submittedQuery = state.query.trim(); state.nextCatalogCursor = null; void refreshCommunityCatalog(); });
   document.querySelector('#topSearchInput')?.addEventListener('input', (event) => { state.query = event.target.value; });
   
   document.querySelectorAll('.filter-menu-popup input[type="radio"]').forEach((radio) => {
@@ -1710,7 +1869,8 @@ function bind() {
       if (type === 'price') state.price = val;
       else if (type === 'access') state.access = val;
       else if (type === 'sort') state.sort = val;
-      renderCommunityGrid();
+      state.nextCatalogCursor = null;
+      void refreshCommunityCatalog();
     });
   });
 
@@ -1726,7 +1886,22 @@ function bind() {
   }
 
   document.querySelector('[data-community]')?.parentElement.addEventListener('click', (event) => { const cardElement = event.target.closest('[data-community]'); if (cardElement && !event.target.closest('button')) { state.selected = /^\d+$/.test(cardElement.dataset.community) ? Number(cardElement.dataset.community) : cardElement.dataset.community; state.view = 'detail'; render(); } });
-  document.querySelector('#postForm')?.addEventListener('submit', (event) => { event.preventDefault(); const text = new FormData(event.target).get('text'); store.addPost({ communityId: state.selected, name: store.user.name, role: 'Member', text, time: 'now' }); render(); showToast('Post published'); });
+  document.querySelector('#postForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const text = new FormData(form).get('text');
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    try {
+      await api.post(`/communities/${encodeURIComponent(state.selected)}/posts`, { content: text });
+      await loadCommunityFeed(state.selected);
+      render();
+      showToast('Post published');
+    } catch (error) {
+      showToast(error.message);
+      submit.disabled = false;
+    }
+  });
   
   document.querySelector('#profileSettingsForm')?.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -1838,8 +2013,10 @@ function actions(action, element) {
       state.category = 'Trending';
       state.price = 'All';
       state.access = 'All';
+      state.nextCatalogCursor = null;
     }
-    render();
+    if (action === 'reset') void refreshCommunityCatalog();
+    else render();
   } else if (action === 'toggle-brand-menu') {
     state.brandMenu = !state.brandMenu;
     if (state.brandMenu) {
@@ -1851,7 +2028,8 @@ function actions(action, element) {
   } else if (action === 'clear-search') {
     state.query = '';
     state.submittedQuery = '';
-    render();
+    state.nextCatalogCursor = null;
+    void refreshCommunityCatalog();
   } else if (action === 'create') {
     state.profileMenu = false;
     state.brandMenu = false;
@@ -1920,7 +2098,6 @@ function actions(action, element) {
     if (action === 'affiliates') state.settingsTab = 'affiliates';
     render();
   } else if (action === 'logout') {
-    store.clearSession();
     const menu = document.querySelector('#userProfileMenu');
     if (menu) menu.classList.remove('active');
     state.profileMenu = false;
@@ -1928,27 +2105,18 @@ function actions(action, element) {
     state.filterMenu = false;
     state.chatMenu = false;
     document.body.classList.remove('chat-open');
-    render();
+    void logoutUser();
   } else if (action === 'join') {
     if (!store.user) {
+      state.pendingJoinCommunityId = state.selected;
       state.authMode = 'login';
       state.modal = 'auth';
       mountAuthModal();
     } else {
-      const activeComm = communities.find(c => c.id === state.selected) || communities[0];
-      if (activeComm && !state.joinedCommunities.includes(activeComm.id)) {
-        state.joinedCommunities.push(activeComm.id);
-        showToast(`Joined ${activeComm.title}!`);
-        render();
-      }
+      void joinSelectedCommunity();
     }
   } else if (action === 'leave') {
-    const activeComm = communities.find(c => c.id === state.selected) || communities[0];
-    if (activeComm) {
-      state.joinedCommunities = state.joinedCommunities.filter(id => id !== activeComm.id);
-      showToast(`Left ${activeComm.title}`);
-      render();
-    }
+    void leaveSelectedCommunity();
   } else if (action === 'notifications') {
     showToast(`${notifications.length} new notifications`);
   } else if (action === 'chats') {
@@ -2030,5 +2198,8 @@ function actions(action, element) {
     document.querySelector(selector)?.click();
   }
 }
-restoreSession();
 render();
+void restoreSession().then(render).catch((error) => {
+  state.apiError = error.message;
+  render();
+});
