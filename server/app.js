@@ -37,7 +37,8 @@ function rateLimitPolicies(env = process.env) {
     account: { limit: positiveInteger(env.RATE_LIMIT_ACCOUNT_MAX, 120), windowMs: 60_000 },
     membership: { limit: positiveInteger(env.RATE_LIMIT_MEMBERSHIP_MAX, 30), windowMs: 60_000 },
     feedRead: { limit: positiveInteger(env.RATE_LIMIT_FEED_READ_MAX, 120), windowMs: 60_000 },
-    feedWrite: { limit: positiveInteger(env.RATE_LIMIT_FEED_WRITE_MAX, 20), windowMs: 60_000 }
+    feedWrite: { limit: positiveInteger(env.RATE_LIMIT_FEED_WRITE_MAX, 20), windowMs: 60_000 },
+    communityWrite: { limit: positiveInteger(env.RATE_LIMIT_COMMUNITY_WRITE_MAX, 20), windowMs: 60_000 }
   };
 }
 
@@ -48,6 +49,8 @@ function rateLimitGroup(method, pathname) {
   if (pathname === '/api/v1/communities' && method === 'GET') return 'catalog';
   if (pathname === '/api/v1/me' && method === 'GET') return 'account';
   if (pathname === '/api/v1/me/memberships' && method === 'GET') return 'account';
+  if (pathname === '/api/v1/communities' && method === 'POST') return 'communityWrite';
+  if (/^\/api\/v1\/communities\/[^/]+$/.test(pathname) && method === 'PATCH') return 'communityWrite';
   if (/^\/api\/v1\/communities\/[^/]+\/membership$/.test(pathname) && ['POST', 'DELETE'].includes(method)) return 'membership';
   if (/^\/api\/v1\/communities\/[^/]+\/posts$/.test(pathname)) {
     if (method === 'GET') return 'feedRead';
@@ -243,17 +246,122 @@ async function handle(request, response, rateLimiter, policies, trustedProxyHops
     });
   }
 
+  if (method === 'POST' && pathname === '/api/v1/communities') {
+    validateOrigin(request);
+    const user = await requireUser(request);
+    const body = await readJson(request);
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    if (title.length < 2 || title.length > 30) {
+      throw new HttpError(400, 'invalid_community_title', 'Community name must be between 2 and 30 characters.');
+    }
+    const id = `created-${randomBytes(16).toString('hex')}`;
+    const slugBase = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'community';
+    const slug = `${slugBase}-${randomBytes(8).toString('hex')}`;
+    const details = {
+      title,
+      slug,
+      description: '',
+      members: 1,
+      onlineCount: 0,
+      adminsCount: 1,
+      price: 'Free',
+      priceType: 'Free',
+      accessType: 'Private',
+      category: 'Trending',
+      cover: '',
+      creatorName: user.display_name,
+      creatorAvatar: '',
+      initials: title.slice(0, 2).toUpperCase(),
+      accent: '#3d5ba9',
+      ownerId: user.id
+    };
+    await inTransaction(async (client) => {
+      await client.query(
+        `INSERT INTO communities (id, slug, category, price_type, access_type, member_count, owner_id, details)
+         VALUES ($1, $2, 'Trending', 'Free', 'Private', 1, $3, $4::jsonb)`,
+        [id, slug, user.id, JSON.stringify(details)]
+      );
+      await client.query(
+        `INSERT INTO community_memberships (user_id, community_id) VALUES ($1, $2)`,
+        [user.id, id]
+      );
+    });
+    return sendJson(response, 201, { community: { id, ...details } });
+  }
+
+  const communityMatch = pathname.match(/^\/api\/v1\/communities\/([^/]+)$/);
+  if (communityMatch && method === 'PATCH') {
+    validateOrigin(request);
+    const user = await requireUser(request);
+    let communityId;
+    try {
+      communityId = decodeURIComponent(communityMatch[1]);
+    } catch {
+      throw new HttpError(400, 'invalid_community_id', 'Community ID is invalid.');
+    }
+    const body = await readJson(request);
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    const description = typeof body.description === 'string' ? body.description.trim() : '';
+    const accessType = body.accessType;
+    const accent = typeof body.accent === 'string' ? body.accent : '';
+    const initials = typeof body.initials === 'string' ? body.initials.trim() : '';
+    if (title.length < 2 || title.length > 30) {
+      throw new HttpError(400, 'invalid_community_title', 'Community name must be between 2 and 30 characters.');
+    }
+    if (description.length > 150) {
+      throw new HttpError(400, 'invalid_community_description', 'Community description cannot exceed 150 characters.');
+    }
+    if (!['Public', 'Private'].includes(accessType)) {
+      throw new HttpError(400, 'invalid_community_access', 'Choose Public or Private access.');
+    }
+    if (!/^#[0-9a-fA-F]{6}$/.test(accent)) {
+      throw new HttpError(400, 'invalid_community_accent', 'Community color must be a valid six-digit hex color.');
+    }
+    if (initials.length < 1 || initials.length > 2) {
+      throw new HttpError(400, 'invalid_community_initials', 'Community initials must be one or two characters.');
+    }
+    const updated = await pool.query(
+      `UPDATE communities
+          SET access_type = $1,
+              details = details || jsonb_build_object(
+                'title', $2::text,
+                'description', $3::text,
+                'accessType', $1::text,
+                'accent', $4::text,
+                'initials', $5::text
+              )
+        WHERE id = $6 AND owner_id = $7
+        RETURNING id, details, member_count`,
+      [accessType, title, description, accent, initials, communityId, user.id]
+    );
+    if (!updated.rowCount) {
+      const exists = await pool.query('SELECT 1 FROM communities WHERE id = $1', [communityId]);
+      if (!exists.rowCount) throw new HttpError(404, 'community_not_found', 'Community was not found.');
+      throw new HttpError(403, 'community_owner_required', 'Only the community owner can update its settings.');
+    }
+    return sendJson(response, 200, {
+      community: {
+        ...updated.rows[0].details,
+        id: updated.rows[0].id,
+        members: Number(updated.rows[0].member_count)
+      }
+    });
+  }
+
   const joinCommunityId = communityIdFromPath(pathname, 'membership');
   if (joinCommunityId && (method === 'POST' || method === 'DELETE')) {
     validateOrigin(request);
     const user = await requireUser(request);
     const community = await pool.query(
-      `SELECT id, access_type, price_type FROM communities WHERE id = $1`,
+      `SELECT id, access_type, price_type, owner_id FROM communities WHERE id = $1`,
       [joinCommunityId]
     );
     if (!community.rowCount) throw new HttpError(404, 'community_not_found', 'Community was not found.');
     if (method === 'POST' && (community.rows[0].access_type !== 'Public' || community.rows[0].price_type !== 'Free')) {
       throw new HttpError(403, 'membership_unavailable', 'This community requires approval or payment.');
+    }
+    if (method === 'DELETE' && community.rows[0].owner_id === user.id) {
+      throw new HttpError(403, 'owner_membership_required', 'Community owners cannot leave their own community.');
     }
 
     if (method === 'POST') {

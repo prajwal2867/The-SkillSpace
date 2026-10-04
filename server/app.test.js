@@ -43,6 +43,34 @@ test('registration validates input before accessing the database', async () => {
   assert.equal((await response.json()).error.code, 'invalid_email');
 });
 
+test('community creation and settings mutations require an authenticated owner', async () => {
+  const headers = {
+    'content-type': 'application/json',
+    origin: 'http://localhost:5173'
+  };
+  const create = await fetch(`${origin}/api/v1/communities`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ title: 'Example Community' })
+  });
+  assert.equal(create.status, 401);
+  assert.equal((await create.json()).error.code, 'authentication_required');
+
+  const update = await fetch(`${origin}/api/v1/communities/community-id`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      title: 'Example Community',
+      description: '',
+      accessType: 'Private',
+      accent: '#123456',
+      initials: 'EC'
+    })
+  });
+  assert.equal(update.status, 401);
+  assert.equal((await update.json()).error.code, 'authentication_required');
+});
+
 test('catalog pagination rejects malformed page sizes', async () => {
   const response = await fetch(`${origin}/api/v1/communities?limit=twenty`);
   assert.equal(response.status, 400);

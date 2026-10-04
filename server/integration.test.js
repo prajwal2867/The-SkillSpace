@@ -16,6 +16,9 @@ let origin;
 let userId;
 let sessionCookie;
 let communityCreated = false;
+let ownedCommunityId;
+let ownerUserId;
+let otherUserId;
 let serverStarted = false;
 
 before(async () => {
@@ -38,7 +41,10 @@ after(async () => {
   if (communityCreated) {
     if (userId) await pool.query('DELETE FROM posts WHERE user_id = $1', [userId]);
     await pool.query('DELETE FROM communities WHERE id = $1', [communityId]);
+    if (ownedCommunityId) await pool.query('DELETE FROM communities WHERE id = $1', [ownedCommunityId]);
     if (userId) await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+    if (ownerUserId) await pool.query('DELETE FROM users WHERE id = $1', [ownerUserId]);
+    if (otherUserId) await pool.query('DELETE FROM users WHERE id = $1', [otherUserId]);
   }
   await pool.end();
 });
@@ -106,4 +112,95 @@ test('registration, session, free membership, and member-only feed work end to e
   assert.equal(loggedOut.response.status, 200);
   const expiredSession = await jsonRequest('/api/v1/me', { cookie: sessionCookie });
   assert.equal(expiredSession.payload.user, null);
+});
+
+test('community creation and general settings persist and are owner-only', async () => {
+  const registration = await jsonRequest('/api/v1/auth/register', {
+    method: 'POST',
+    body: { email: `owner-${email}`, password: 'integration password phrase', name: 'Community Owner' }
+  });
+  assert.equal(registration.response.status, 201);
+  ownerUserId = registration.payload.user.id;
+  const ownerCookie = registration.response.headers.get('set-cookie').split(';', 1)[0];
+
+  const created = await jsonRequest('/api/v1/communities', {
+    method: 'POST',
+    body: { title: 'Persistent Community' },
+    cookie: ownerCookie
+  });
+  assert.equal(created.response.status, 201);
+  assert.equal(created.payload.community.title, 'Persistent Community');
+  assert.equal(created.payload.community.accessType, 'Private');
+  ownedCommunityId = created.payload.community.id;
+
+  const otherRegistration = await jsonRequest('/api/v1/auth/register', {
+    method: 'POST',
+    body: { email: `other-${email}`, password: 'integration password phrase', name: 'Other User' }
+  });
+  assert.equal(otherRegistration.response.status, 201);
+  otherUserId = otherRegistration.payload.user.id;
+  const otherCookie = otherRegistration.response.headers.get('set-cookie').split(';', 1)[0];
+  const privateFeed = await jsonRequest(`/api/v1/communities/${ownedCommunityId}/posts`, { cookie: otherCookie });
+  assert.equal(privateFeed.response.status, 403);
+  assert.equal(privateFeed.payload.error.code, 'membership_required');
+  const privateJoin = await jsonRequest(`/api/v1/communities/${ownedCommunityId}/membership`, {
+    method: 'POST',
+    body: {},
+    cookie: otherCookie
+  });
+  assert.equal(privateJoin.response.status, 403);
+  assert.equal(privateJoin.payload.error.code, 'membership_unavailable');
+  const forbidden = await jsonRequest(`/api/v1/communities/${ownedCommunityId}`, {
+    method: 'PATCH',
+    body: {
+      title: 'Changed Name',
+      description: 'Updated description',
+      accessType: 'Public',
+      accent: '#123456',
+      initials: 'CN'
+    },
+    cookie: otherCookie
+  });
+  assert.equal(forbidden.response.status, 403);
+
+  const updated = await jsonRequest(`/api/v1/communities/${ownedCommunityId}`, {
+    method: 'PATCH',
+    body: {
+      title: 'Changed Name',
+      description: 'Updated description',
+      accessType: 'Public',
+      accent: '#123456',
+      initials: 'CN'
+    },
+    cookie: ownerCookie
+  });
+  assert.equal(updated.response.status, 200);
+  assert.equal(updated.payload.community.title, 'Changed Name');
+  assert.equal(updated.payload.community.description, 'Updated description');
+  assert.equal(updated.payload.community.accessType, 'Public');
+  assert.equal(updated.payload.community.accent, '#123456');
+  assert.equal(updated.payload.community.initials, 'CN');
+
+  const publicCatalog = await jsonRequest('/api/v1/communities', { cookie: otherCookie });
+  assert.equal(publicCatalog.payload.communities.some((item) => item.id === ownedCommunityId), true);
+  const joined = await jsonRequest(`/api/v1/communities/${ownedCommunityId}/membership`, {
+    method: 'POST',
+    body: {},
+    cookie: otherCookie
+  });
+  assert.equal(joined.response.status, 200);
+  const memberFeed = await jsonRequest(`/api/v1/communities/${ownedCommunityId}/posts`, { cookie: otherCookie });
+  assert.equal(memberFeed.response.status, 200);
+
+  const catalog = await jsonRequest('/api/v1/communities', { cookie: ownerCookie });
+  assert.equal(catalog.payload.communities.some((item) => item.id === ownedCommunityId), true);
+  const ownerLeave = await jsonRequest(`/api/v1/communities/${ownedCommunityId}/membership`, {
+    method: 'DELETE',
+    body: {},
+    cookie: ownerCookie
+  });
+  assert.equal(ownerLeave.response.status, 403);
+  assert.equal(ownerLeave.payload.error.code, 'owner_membership_required');
+  const membership = await jsonRequest('/api/v1/me/memberships', { cookie: ownerCookie });
+  assert.equal(membership.payload.memberships.some((item) => item.communityId === ownedCommunityId), true);
 });

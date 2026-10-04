@@ -9,12 +9,6 @@ state.apiError = null;
 state.feedPosts = [];
 state.pendingJoinCommunityId = null;
 state.nextCatalogCursor = null;
-store.communities.forEach((community) => {
-  const savedCommunity = String(community.id).startsWith('created-') ? { ...community, cover: '', creatorAvatar: '' } : community;
-  if (!String(savedCommunity.id).startsWith('created-') || String(savedCommunity.ownerId) === String(store.user?.id)) {
-    if (!communities.some((item) => item.id === savedCommunity.id)) communities.push(savedCommunity);
-  }
-});
 const icon = (name) => ({
   search: '⌕',
   bell: '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10Z"></path><path d="M10 21h4"></path></svg>',
@@ -28,18 +22,11 @@ const addImageIcon = (className = '') => `<svg class="${className}" xmlns="http:
 const isVisibleCommunity = (community) => !String(community.id).startsWith('created-') || String(community.ownerId) === String(store.user?.id);
 const chatItems = chats.map((chat) => ({ ...chat, member: dummyUsers.find((user) => user.name === chat.user) })).filter((chat) => chat.member);
 const unreadChatCount = chatItems.filter((chat) => chat.unread).length;
-function syncOwnedCommunities() {
-  store.communities.forEach((community) => {
-    if (String(community.id).startsWith('created-') && String(community.ownerId) === String(store.user?.id) && !communities.some((item) => item.id === community.id)) {
-      communities.push({ ...community, cover: '', creatorAvatar: '' });
-    }
-  });
-}
 
 function filteredCommunities() {
   if (!state.apiReady) return [];
   const query = state.submittedQuery.toLowerCase();
-  const result = communities.filter(isVisibleCommunity).filter((community) => (!query || `${community.title} ${community.description} ${community.category}`.toLowerCase().includes(query)) && (state.category === 'Trending' || community.category === state.category) && (state.price === 'All' || community.priceType === state.price) && (state.access === 'All' || community.accessType === state.access));
+  const result = communities.filter((community) => (!query || `${community.title} ${community.description} ${community.category}`.toLowerCase().includes(query)) && (state.category === 'Trending' || community.category === state.category) && (state.price === 'All' || community.priceType === state.price) && (state.access === 'All' || community.accessType === state.access));
   if (state.sort === 'Top') result.sort((a, b) => parseFloat(b.members) - parseFloat(a.members));
   return result;
 }
@@ -104,7 +91,7 @@ function header() {
           </button>
         </div>
         <div class="brand-community-list" id="brandCommunityList">
-          ${(state.joinedCommunities || []).length > 0 ? (state.joinedCommunities.map(id => communities.find(c => c.id === id)).filter(Boolean).filter(isVisibleCommunity)).map(comm => `
+          ${(state.joinedCommunities || []).length > 0 ? (state.joinedCommunities.map(id => communities.find(c => c.id === id)).filter(Boolean)).map(comm => `
             <div class="brand-community-item" data-action="select-community" data-id="${comm.id}">
               ${comm.cover ? `<img src="${comm.cover}" class="brand-comm-avatar" alt="${escapeHTML(comm.title)}">` : `<span class="brand-comm-avatar brand-comm-avatar-placeholder">${addImageIcon()}</span>`}
               <span class="brand-comm-title">${escapeHTML(comm.title)}</span>
@@ -570,7 +557,7 @@ function profileView() {
   const userInitial = initials(user);
   const profileCommunities = state.profileCommunityView === 'created'
     ? communities.filter((community) => String(community.id).startsWith('created-') && String(community.ownerId) === String(store.user?.id))
-    : (state.joinedCommunities || []).map((id) => communities.find((community) => community.id === id)).filter(Boolean).filter(isVisibleCommunity);
+    : (state.joinedCommunities || []).map((id) => communities.find((community) => community.id === id)).filter(Boolean);
   const profileCommunityLabel = state.profileCommunityView === 'created' ? 'My communities' : 'Memberships';
 
   return `
@@ -1039,6 +1026,7 @@ function selectPlanView() {
     <main class="select-plan-page">
       <div class="select-plan-container">
         <h1 class="plan-page-title">Select your plan</h1>
+        <p class="text-secondary">Plan prices are a preview only. Billing is not available, and creating a community does not start a paid plan.</p>
         
         <div class="plan-toggle-wrapper">
           <div class="plan-toggle-container">
@@ -1165,34 +1153,22 @@ function selectPlanView() {
 }
 
 function planModalContent() {
-  const planName = state.selectedPlan || 'Hobby';
-  const isYearly = state.planBilling === 'yearly';
-  const price = planName === 'Pro' ? (isYearly ? '$82' : '$99') : (isYearly ? '$7.50' : '$9');
-  const chargeDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
   return `
     <section class="plan-modal-card" role="dialog" aria-modal="true" aria-labelledby="plan-modal-title" onclick="event.stopPropagation()">
       <button class="modal-close" data-action="close-modal" aria-label="Close">&times;</button>
       <div class="plan-modal-logo" aria-label="SkillSpace"><span>skill</span>space</div>
       <h2 id="plan-modal-title">Create your community</h2>
-      <p class="plan-modal-subtitle">14-day free trial of ${escapeHTML(planName)} ${price}/month <button type="button" class="plan-change-link" data-action="change-plan">(change)</button></p>
+      <p class="plan-modal-subtitle">Community billing is not available yet. You can create a free community.</p>
       <form id="planCheckoutForm" class="plan-checkout-form">
         <div class="plan-field-group">
           <label for="communityName">Group name</label>
           <input id="communityName" name="communityName" maxlength="30" placeholder="Group name" required autofocus>
           <div class="plan-field-hint"><em>You can change this later</em><span id="communityNameCount">0 / 30</span></div>
         </div>
-        <div class="plan-card-input" aria-label="Payment card details">
-          <span class="plan-card-icon">▣</span>
-          <input name="cardNumber" data-card-step="cardNumber" inputmode="numeric" maxlength="16" placeholder="Card number" aria-label="Card number" required>
-          <input name="expiryMonth" data-card-step="expiryMonth" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Expiration month" required>
-          <span class="plan-card-expiry-separator" aria-hidden="true">/</span>
-          <input name="expiryYear" data-card-step="expiryYear" inputmode="numeric" maxlength="2" placeholder="YY" aria-label="Expiration year" required>
-          <input name="cvc" data-card-step="cvc" inputmode="numeric" maxlength="3" placeholder="CVC" aria-label="CVC" required>
-        </div>
-        <button type="submit" class="plan-trial-button" disabled>START FREE TRIAL</button>
+        <p class="auth-message empty" aria-live="polite"></p>
+        <button type="submit" class="plan-trial-button">CREATE COMMUNITY</button>
       </form>
-      <p class="plan-modal-note">Your 1st charge will be on ${chargeDate} for ${price}. We'll email you 3-days before to remind you. Cancel anytime with 1-click.</p>
+      <p class="plan-modal-note">New communities start private. You can change visibility in General settings.</p>
     </section>
   `;
 }
@@ -1201,9 +1177,7 @@ function communitySettingsModalContent() {
   const community = communities.find((item) => item.id === state.selected) || communities[0];
   const title = escapeHTML(community.title);
   const description = escapeHTML(community.description || '');
-  const initialsText = escapeHTML((community.title || 'C').slice(0, 2).toUpperCase());
-  const iconSource = state.pendingCommunityMedia?.type === 'icon' ? state.pendingCommunityMedia.dataUrl : community.creatorAvatar;
-  const coverSource = state.pendingCommunityMedia?.type === 'cover' ? state.pendingCommunityMedia.dataUrl : community.cover;
+  const initialsText = escapeHTML(community.initials || (community.title || 'C').slice(0, 2).toUpperCase());
   const navItems = ['Dashboard', 'Layouts', 'Invite', 'General', 'Subscriptions', 'Categories', 'Tabs', 'Plugins', 'Metrics', 'Gamification', 'Discovery', 'Links', 'Billing & referrals'];
 
   return `
@@ -1217,10 +1191,7 @@ function communitySettingsModalContent() {
           ${navItems.map((item) => `<button type="button" class="community-settings-nav-item${item === 'General' ? ' active' : ''}"${item === 'General' ? '' : ' disabled'}>${item}</button>`).join('')}
         </nav>
         <form class="community-settings-content" id="communitySettingsForm">
-          <div class="community-settings-media-row">
-            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Icon</strong><span>Recommended:<br>128x128</span></div><label class="community-settings-upload community-settings-icon-upload">${iconSource ? `<img src="${escapeHTML(iconSource)}" alt="">` : addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload group icon"></label><button type="button" class="community-settings-change" data-action="community-upload-icon">CHANGE</button></div>
-            <div class="community-settings-media-item"><div class="community-settings-media-label"><strong>Cover</strong><span>Recommended:<br>1084x576</span></div><label class="community-settings-upload community-settings-cover-upload">${coverSource ? `<img src="${escapeHTML(coverSource)}" alt="">` : addImageIcon('community-settings-add-image-icon')}<input type="file" accept="image/*" aria-label="Upload cover image"></label><button type="button" class="community-settings-change" data-action="community-upload-cover">CHANGE</button></div>
-          </div>
+          <p class="text-secondary">Community image uploads are not available yet.</p>
           <div class="community-settings-fields">
             <div class="community-settings-field"><label for="communitySettingsName">Group name</label><input id="communitySettingsName" name="title" class="skool-input" value="${title}" maxlength="30" required><span class="community-settings-counter">${community.title.length}/30</span></div>
             <div class="community-settings-field is-disabled"><label for="communitySettingsUrl">URL</label><input id="communitySettingsUrl" class="skool-input" value="skool.com/${escapeHTML(community.slug || '')}" disabled><p>You can change your URL with a paid account. <a href="#upgrade">Upgrade now?</a></p></div>
@@ -1442,35 +1413,29 @@ function bindAuth() {
 
   const communitySettingsForm = document.querySelector('#communitySettingsForm');
   if (communitySettingsForm) {
-    communitySettingsForm.querySelectorAll('.community-settings-upload input[type="file"]').forEach((input) => {
-      input.addEventListener('change', () => {
-        const file = input.files?.[0];
-        if (!file || !file.type.startsWith('image/')) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          state.cropper = { type: input.closest('.community-settings-icon-upload') ? 'icon' : 'cover', src: reader.result };
-          state.modal = 'community-cropper';
-          backdrop.innerHTML = modalCardContent();
-          bindAuth();
-        };
-        reader.readAsDataURL(file);
-        input.value = '';
-      });
-    });
-    communitySettingsForm.onsubmit = (event) => {
+    communitySettingsForm.onsubmit = async (event) => {
       event.preventDefault();
       const activeCommunity = communities.find((item) => item.id === state.selected && isVisibleCommunity(item));
       const data = Object.fromEntries(new FormData(communitySettingsForm));
       if (!activeCommunity) return;
-      const media = state.pendingCommunityMedia;
-      Object.assign(activeCommunity, { title: data.title.trim(), description: data.description.trim(), accessType: data.accessType, accent: data.color.trim() || activeCommunity.accent });
-      if (media?.type === 'cover') activeCommunity.cover = media.dataUrl;
-      if (media?.type === 'icon') activeCommunity.creatorAvatar = media.dataUrl;
-      store.updateCommunity(activeCommunity, store.user?.id);
-      state.pendingCommunityMedia = null;
-      closeAuthModal();
-      render();
-      showToast('Group settings saved');
+      const submit = communitySettingsForm.querySelector('[type="submit"]');
+      submit.disabled = true;
+      try {
+        const { community } = await api.patch(`/communities/${encodeURIComponent(activeCommunity.id)}`, {
+          title: data.title,
+          description: data.description,
+          accessType: data.accessType,
+          accent: data.color,
+          initials: data.initials
+        });
+        Object.assign(activeCommunity, community);
+        closeAuthModal();
+        render();
+        showToast('Group settings saved');
+      } catch (error) {
+        showToast(error.message);
+        submit.disabled = false;
+      }
     };
     communitySettingsForm.querySelectorAll('textarea, input[name="title"]').forEach((field) => field.addEventListener('input', (event) => {
       const counter = event.target.parentElement.querySelector('.community-settings-counter');
@@ -1543,74 +1508,41 @@ function bindAuth() {
   const planCheckoutForm = document.querySelector('#planCheckoutForm');
   if (planCheckoutForm) {
     const communityName = planCheckoutForm.querySelector('[name="communityName"]');
-    const trialButton = planCheckoutForm.querySelector('.plan-trial-button');
-    const cardNumber = planCheckoutForm.querySelector('[name="cardNumber"]');
-    const expiryMonth = planCheckoutForm.querySelector('[name="expiryMonth"]');
-    const expiryYear = planCheckoutForm.querySelector('[name="expiryYear"]');
-    const cvc = planCheckoutForm.querySelector('[name="cvc"]');
-    const updateTrialButton = () => {
-      const month = Number(expiryMonth.value);
-      const isReady = communityName.value.trim().length > 0
-        && /^\d{1,16}$/.test(cardNumber.value)
-        && /^\d{1,2}$/.test(expiryMonth.value)
-        && /^\d{2}$/.test(expiryYear.value)
-        && /^\d{3}$/.test(cvc.value)
-        && month >= 1 && month <= 12;
-      trialButton.disabled = !isReady;
-    };
-
     communityName?.addEventListener('input', (event) => {
       const counter = document.querySelector('#communityNameCount');
-      if (counter) counter.textContent = `${event.target.value.length} / 30`;
-      updateTrialButton();
+      if (counter) counter.textContent = `${event.target.value.length}/30`;
     });
 
-    const cardSteps = [...planCheckoutForm.querySelectorAll('[data-card-step]')];
-    cardSteps.forEach((field, index) => {
-      field.addEventListener('input', (event) => {
-        event.target.value = event.target.value.replace(/\D/g, '').slice(0, Number(event.target.maxLength));
-        if (event.target.value.length === Number(event.target.maxLength)) cardSteps[index + 1]?.focus();
-        updateTrialButton();
-      });
-      field.addEventListener('keydown', (event) => {
-        if (event.key === 'Backspace' && !event.target.value && index > 0) {
-          cardSteps[index - 1].focus();
-        }
-      });
-    });
-    updateTrialButton();
-
-    planCheckoutForm.onsubmit = (event) => {
+    planCheckoutForm.onsubmit = async (event) => {
       event.preventDefault();
-      const name = new FormData(planCheckoutForm).get('communityName').trim();
-      const user = store.user || { name: 'Creator' };
-      const community = {
-        id: `created-${crypto.randomUUID()}`,
-        ownerId: user.id,
-        title: name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-        description: 'A private community for creators.',
-        members: '1',
-        onlineCount: '0',
-        adminsCount: '1',
-        price: 'Free trial',
-        priceType: 'Free',
-        accessType: 'Private',
-        category: 'Trending',
-        cover: '',
-        creatorName: user.name || 'Creator',
-        creatorAvatar: user.pfp || ''
-      };
-      communities.push(community);
-      store.saveCommunity(community);
-      state.joinedCommunities = [...new Set([...(state.joinedCommunities || []), community.id])];
-      state.selected = community.id;
-      state.communityTab = 'Community';
-      state.view = 'creator-community';
-      closeAuthModal();
-      state.selectedPlan = null;
-      render();
-      showToast(`${name} is ready to set up.`);
+      const title = new FormData(planCheckoutForm).get('communityName').trim();
+      const submit = planCheckoutForm.querySelector('[type="submit"]');
+      submit.disabled = true;
+      try {
+        const { community } = await api.post('/communities', { title });
+        communities.push(community);
+        state.joinedCommunities = [...new Set([...state.joinedCommunities, community.id])];
+        state.selected = community.id;
+        state.communityTab = 'Community';
+        state.view = 'creator-community';
+        closeAuthModal();
+        state.selectedPlan = null;
+        let feedError = '';
+        try {
+          await loadCommunityFeed(community.id);
+        } catch (error) {
+          feedError = error.message;
+        }
+        render();
+        showToast(feedError
+          ? `${community.title} was created, but its feed failed to load: ${feedError}`
+          : `${community.title} is ready to set up.`);
+      } catch (error) {
+        const message = planCheckoutForm.querySelector('.auth-message');
+        message.textContent = error.message;
+        message.className = 'auth-message error';
+        submit.disabled = false;
+      }
     };
   }
 }
@@ -1753,11 +1685,10 @@ async function loadCommunityCatalog(cursor = null) {
     ...community,
     id: /^\d+$/.test(community.id) ? Number(community.id) : community.id
   }));
-  const createdCommunities = communities.filter((community) => String(community.id).startsWith('created-'));
   if (cursor) {
     communities.push(...catalog);
   } else {
-    communities.splice(0, communities.length, ...catalog, ...createdCommunities);
+    communities.splice(0, communities.length, ...catalog);
   }
   state.nextCatalogCursor = page.nextCursor;
   state.apiReady = true;
@@ -1788,6 +1719,7 @@ async function refreshCommunityCatalog() {
 }
 
 async function loadCommunityFeed(communityId) {
+  state.feedPosts = [];
   const { posts } = await api.get(`/communities/${encodeURIComponent(communityId)}/posts`);
   state.feedPosts = posts;
 }

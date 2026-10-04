@@ -1,6 +1,6 @@
 # SkillSpace
 
-SkillSpace is a browser-based prototype for discovering, joining, and creating online communities for creators, coaches, educators, and learners. The current build focuses on validating the product experience and visual language before the planned production migration.
+SkillSpace is an early-stage community platform for discovering and joining communities, with an initial PostgreSQL-backed account, membership, feed, and community-creation slice. Many other screens remain prototype UI and are not production-ready.
 
 ## Current Progress
 
@@ -9,13 +9,13 @@ The Vite prototype currently includes:
 - Community discovery with category, price, access, search, and sorting filters.
 - Community detail pages with media galleries, curriculum highlights, reviews, creator information, and membership actions.
 - Login, registration, password recovery, and code-login prototype dialogs.
-- Local profile and settings screens, including profile editing, contribution heatmaps, theme switching, affiliates, notifications, chat, and payment settings surfaces.
-- Local join/leave membership state and profile membership views.
-- Community creation flow with plan selection, a prototype checkout form, and a creator community setup page.
-- Local post creation, chat notifications, and seeded community activity.
+- Profile and settings screens, including prototype profile editing, contribution heatmaps, theme switching, affiliates, notifications, chat, and payment settings surfaces.
+- Server-backed free/public membership join/leave and profile membership views.
+- Community creation flow with server-persisted private communities and owner-only General settings. Billing is not available.
+- Server-persisted feed posts and seeded demo community activity.
 - Responsive styling with light/dark themes, CSS design tokens, and vanilla JavaScript ES modules.
 
-This is not production authentication, billing, authorization, or shared community storage. User data, sessions, posts, memberships, and created communities are stored in the browser with `localStorage`; checkout does not charge a real payment method.
+The API provides server-side authentication, authorization for its implemented routes, and shared PostgreSQL persistence for accounts, sessions, memberships, posts, and newly created communities. Profile editing, community image uploads, paid membership, billing, email verification, and password recovery remain incomplete or prototype-only. Do not use this build for production or submit payment details.
 
 ## Tech Stack
 
@@ -30,7 +30,7 @@ This is not production authentication, billing, authorization, or shared communi
 The SkillSpace/
 ├── src/
 │   ├── domain/data.js       # Categories, communities, demo users, reviews, chats, and notifications
-│   ├── services/store.js    # Browser localStorage persistence adapter
+│   ├── services/store.js    # In-memory current-user session state
 │   ├── main.js              # Application state, rendering, routing, and event handling
 │   └── styles.css           # Design tokens, responsive layout, and component styles
 ├── docs/
@@ -90,7 +90,7 @@ Vite proxies `/api` calls to the API on port 3000. The browser only receives a r
 
 Rate limits use the direct TCP peer address by default. If the API is behind a reverse proxy, set `TRUSTED_PROXY_HOPS` to the exact number of proxies that append to `X-Forwarded-For`; the application uses the address at that trusted boundary and rejects malformed chains. Only enable this after the API is network-restricted to those proxies and the outermost trusted proxy strips any client-supplied `X-Forwarded-For` before forwarding. Never enable forwarded-header trust for an API directly reachable from the public internet.
 
-The API supports registration/login/logout, session restore, public community catalog reads, free/public membership join/leave, and member-only feed reads/writes. Paid membership checkout, email verification, password recovery, distributed rate limiting, and production deployment configuration are not implemented in this slice.
+The API supports registration/login/logout, session restore, community catalog reads, free/public membership join/leave, member-only feed reads/writes, authenticated community creation, and owner-only updates to General settings. Private community feeds remain restricted to members. Paid membership checkout, email verification, password recovery, profile persistence, image storage, and production deployment configuration are not implemented in this slice.
 
 ### PostgreSQL integration test
 
@@ -135,7 +135,7 @@ The current production build completes successfully with Vite.
 
 ## Data and Prototype Behavior
 
-The application imports seeded community and user data from `src/domain/data.js` and `dummy_data.js`. The generator scripts use random values, so generated fixtures should be treated as demo data rather than deterministic test fixtures. Browser state is kept under versioned `skillspace_*` localStorage keys; clearing site storage resets the local session and created content.
+The application imports seeded community and user data from `src/domain/data.js` and `dummy_data.js`. The generator scripts use random values, so generated fixtures should be treated as demo data rather than deterministic test fixtures. Authentication is maintained by a server-issued HttpOnly cookie; prototype-only settings may still be held in browser memory.
 
 ## Roadmap
 
