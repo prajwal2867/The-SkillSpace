@@ -63,10 +63,10 @@ Open the local URL printed by Vite, normally `http://localhost:5173`.
 
 ## Local API and PostgreSQL
 
-The first server-backed slice uses PostgreSQL for accounts, cookie sessions, community memberships, and posts. The included Compose setup runs a local development database with non-production credentials:
+The first server-backed slice uses PostgreSQL for accounts, cookie sessions, community memberships, and posts, and Redis for shared production rate limiting. The included Compose setup runs local services with non-production credentials:
 
 ```bash
-docker compose up -d db
+docker compose up -d --wait db redis
 Copy-Item .env.example .env
 ```
 
@@ -86,16 +86,16 @@ npm run dev:api
 npm run dev
 ```
 
-Vite proxies `/api` calls to the API on port 3000. The browser only receives a random `HttpOnly` session cookie; password hashes, authentication, membership checks, and post persistence stay server-side. For production, terminate TLS, set `APP_ORIGIN` to the exact public origin, keep `DATABASE_URL` secret, and tune `PG_POOL_MAX` against the database connection budget.
+Vite proxies `/api` calls to the API on port 3000. The browser only receives a random `HttpOnly` session cookie; password hashes, authentication, membership checks, and post persistence stay server-side. Auth, catalog, membership, and feed routes have per-source-IP limits. Local development falls back to per-process memory only when `REDIS_URL` is absent; production startup refuses to run without Redis. For production, terminate TLS, set `APP_ORIGIN` to the exact public origin, keep database/Redis URLs secret, and tune `PG_POOL_MAX` against the database connection budget. When running behind a proxy, configure network-level trusted-client handling before relying on IP rate limits; this implementation currently uses the direct socket peer address.
 
 The API supports registration/login/logout, session restore, public community catalog reads, free/public membership join/leave, and member-only feed reads/writes. Paid membership checkout, email verification, password recovery, distributed rate limiting, and production deployment configuration are not implemented in this slice.
 
 ### PostgreSQL integration test
 
-The end-to-end database test uses a separate ephemeral PostgreSQL container and refuses to run unless the configured database name ends in `_test`:
+The end-to-end test uses a separate ephemeral PostgreSQL container and Redis instance and refuses to run unless the configured database name ends in `_test`:
 
 ```bash
-docker compose --profile integration up -d --wait test-db
+docker compose --profile integration up -d --wait test-db test-redis
 Copy-Item .env.test.example .env.test
 npm run db:migrate:test
 npm run db:seed:test
@@ -103,7 +103,24 @@ npm run test:integration
 docker compose --profile integration down
 ```
 
-The integration test creates and cleans up a uniquely named user and community. It verifies registration, cookie sessions, membership enforcement, feed persistence, membership reads, and logout against PostgreSQL. Never point `DATABASE_URL` in `.env.test` at a production or shared database.
+The integration test creates and cleans up a uniquely named user and community. It verifies registration, cookie sessions, membership enforcement, feed persistence, membership reads, and logout against PostgreSQL; a second test verifies separate limiter instances share a counter through Redis. Never point `DATABASE_URL` or `REDIS_URL` in `.env.test` at production or shared services.
+
+### Catalog load test
+
+Start the API and seeded local database, then temporarily raise only the local catalog limit above the test arrival rate:
+
+```powershell
+$env:RATE_LIMIT_CATALOG_MAX = "5000"
+npm run dev:api
+```
+
+In another terminal, run the local-only Compose k6 profile:
+
+```powershell
+docker compose --profile loadtest run --rm k6
+```
+
+The script ramps catalog traffic to 25 requests/second and checks for under 1% failed requests and p95 latency below 500 ms. Set `TARGET_RPS` to change the rate. The script refuses remote targets unless explicitly overridden. This is a repeatable baseline for one local machine, **not** proof of 60,000-user capacity; test against production-like hosting/database resources and define expected peak concurrency before treating a result as a capacity claim.
 
 ### Production build
 

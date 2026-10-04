@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { inTransaction, pool } from './db.js';
 import { clearSessionCookie, HttpError, parseCookies, readJson, sendJson, sessionCookie, validateOrigin } from './http.js';
+import { createMemoryRateLimiter, enforceRateLimit } from './rate-limit.js';
 import { hashPassword, hashSessionToken, verifyPassword } from './security.js';
 
 const SESSION_SECONDS = 7 * 24 * 60 * 60;
@@ -11,6 +12,40 @@ function pageLimit(value, fallback, maximum) {
   if (value === null) return fallback;
   if (!/^\d+$/.test(value)) throw new HttpError(400, 'invalid_limit', 'Page size must be a whole number.');
   return Math.min(Math.max(Number(value), 1), maximum);
+}
+
+function positiveInteger(value, fallback) {
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) throw new Error('Rate limit configuration must be a positive integer.');
+  return parsed;
+}
+
+function rateLimitPolicies(env = process.env) {
+  return {
+    authLogin: { limit: positiveInteger(env.RATE_LIMIT_AUTH_LOGIN_MAX, 10), windowMs: 15 * 60_000 },
+    authRegister: { limit: positiveInteger(env.RATE_LIMIT_AUTH_REGISTER_MAX, 5), windowMs: 60 * 60_000 },
+    catalog: { limit: positiveInteger(env.RATE_LIMIT_CATALOG_MAX, 300), windowMs: 60_000 },
+    account: { limit: positiveInteger(env.RATE_LIMIT_ACCOUNT_MAX, 120), windowMs: 60_000 },
+    membership: { limit: positiveInteger(env.RATE_LIMIT_MEMBERSHIP_MAX, 30), windowMs: 60_000 },
+    feedRead: { limit: positiveInteger(env.RATE_LIMIT_FEED_READ_MAX, 120), windowMs: 60_000 },
+    feedWrite: { limit: positiveInteger(env.RATE_LIMIT_FEED_WRITE_MAX, 20), windowMs: 60_000 }
+  };
+}
+
+function rateLimitGroup(method, pathname) {
+  if (pathname === '/api/v1/auth/login' && method === 'POST') return 'authLogin';
+  if (pathname === '/api/v1/auth/register' && method === 'POST') return 'authRegister';
+  if (pathname === '/api/v1/auth/logout' && method === 'POST') return 'account';
+  if (pathname === '/api/v1/communities' && method === 'GET') return 'catalog';
+  if (pathname === '/api/v1/me' && method === 'GET') return 'account';
+  if (pathname === '/api/v1/me/memberships' && method === 'GET') return 'account';
+  if (/^\/api\/v1\/communities\/[^/]+\/membership$/.test(pathname) && ['POST', 'DELETE'].includes(method)) return 'membership';
+  if (/^\/api\/v1\/communities\/[^/]+\/posts$/.test(pathname)) {
+    if (method === 'GET') return 'feedRead';
+    if (method === 'POST') return 'feedWrite';
+  }
+  return null;
 }
 
 function normalizeEmail(email) {
@@ -77,10 +112,21 @@ function communityIdFromPath(pathname, segment) {
   }
 }
 
-async function handle(request, response) {
+async function handle(request, response, rateLimiter, policies) {
   const url = new URL(request.url, 'http://localhost');
   const { pathname, searchParams } = url;
   const method = request.method || 'GET';
+
+  const group = rateLimitGroup(method, pathname);
+  if (group) {
+    const address = request.socket.remoteAddress || 'unknown';
+    const headers = await enforceRateLimit(
+      rateLimiter,
+      `${group}:${address}`,
+      policies[group]
+    );
+    for (const [name, value] of Object.entries(headers)) response.setHeader(name, value);
+  }
 
   if (method === 'GET' && pathname === '/api/health') {
     await pool.query('SELECT 1');
@@ -281,17 +327,17 @@ async function handle(request, response) {
   throw new HttpError(404, 'not_found', 'Route was not found.');
 }
 
-export function createApiServer() {
+export function createApiServer({ rateLimiter = createMemoryRateLimiter(), rateLimits = rateLimitPolicies() } = {}) {
   return createServer(async (request, response) => {
     try {
-      await handle(request, response);
+      await handle(request, response, rateLimiter, rateLimits);
     } catch (error) {
       if (response.headersSent) {
         response.destroy(error);
         return;
       }
       if (error instanceof HttpError) {
-        sendJson(response, error.status, { error: { code: error.code, message: error.message } });
+        sendJson(response, error.status, { error: { code: error.code, message: error.message } }, error.headers);
         return;
       }
       console.error('API request failed', {

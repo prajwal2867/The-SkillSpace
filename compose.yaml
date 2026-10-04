@@ -15,6 +15,17 @@ services:
       timeout: 3s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   test-db:
     image: postgres:16-alpine
     profiles: ["integration"]
@@ -31,6 +42,31 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  test-redis:
+    image: redis:7-alpine
+    profiles: ["integration"]
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6381:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  k6:
+    image: grafana/k6:latest
+    profiles: ["loadtest"]
+    environment:
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:3000}
+      TARGET_RPS: ${TARGET_RPS:-25}
+      ALLOW_REMOTE_TARGET: "false"
+    volumes:
+      - ./load:/scripts:ro
+    command: ["run", "/scripts/catalog.js"]
 
 volumes:
   skillspace-postgres-data:
