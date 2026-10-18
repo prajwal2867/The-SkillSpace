@@ -1,6 +1,6 @@
 # SkillSpace
 
-Skillspace an all-in-one platform for creators, mentors, coaches, organizations, and academies to build and manage their own personalized global online communities, host / sell courses, organize live classes, workshops, webinars, and events, share educational resources, interact with their members, facilitate discussions, networking and collaboration, track learning progress, and gamify engagement through points, levels, leaderboards, and rewards. 
+Skillspace an all-in-one platform for creators, mentors, coaches, organizations, and academies to build and manage their own personalized global online communities, host their courses materials, organize live classes, workshops, webinars, and events, share educational resources, interact with their members, facilitate discussions, networking and collaboration, track learning progress, and gamify engagement through points, levels, leaderboards, and rewards. 
 
 ## Current Progress
 
