@@ -1,6 +1,6 @@
 # SkillSpace
 
-Skillspace an all-in-one platform for creators, mentors, coaches, organizations, and academies to build and manage their own personalized global online communities, host their courses materials, organize live classes, workshops, webinars, and events, share educational resources, interact with their members, facilitate discussions, networking and collaboration, track learning progress, and gamify engagement through points, levels, leaderboards, and rewards. 
+SkillSpace is an early-stage community platform for discovering and joining communities, with an initial PostgreSQL-backed account, membership, feed, and community-creation slice. Many other screens remain prototype UI and are not production-ready.
 
 ## Current Progress
 
@@ -91,18 +91,6 @@ Vite proxies `/api` calls to the API on port 3000. The browser only receives a r
 Rate limits use the direct TCP peer address by default. If the API is behind a reverse proxy, set `TRUSTED_PROXY_HOPS` to the exact number of proxies that append to `X-Forwarded-For`; the application uses the address at that trusted boundary and rejects malformed chains. Only enable this after the API is network-restricted to those proxies and the outermost trusted proxy strips any client-supplied `X-Forwarded-For` before forwarding. Never enable forwarded-header trust for an API directly reachable from the public internet.
 
 The API supports registration/login/logout, session restore, community catalog reads, free/public membership join/leave, member-only feed reads/writes, authenticated community creation, and owner-only updates to General settings. Private community feeds remain restricted to members. Paid membership checkout, email verification, password recovery, profile persistence, image storage, and production deployment configuration are not implemented in this slice.
-
-### Deploying the frontend to Vercel
-
-Vercel can host the Vite frontend, but it does not run `server/index.js` as part of the frontend deployment. Deploy the API as a separate Node.js web service with Node.js `22.12+`, a managed PostgreSQL database, and a Redis service. Configure the API service with:
-
-- `DATABASE_URL`: the managed PostgreSQL connection string.
-- `REDIS_URL`: the Redis connection string. Redis is required in production.
-- `APP_ORIGIN`: the exact public Vercel site origin, such as `https://your-project.vercel.app` (no trailing slash).
-
-Set the API service's health check path to `/api/health`. Run `npm run db:migrate` once with `DATABASE_URL` set for the production database; run `npm run db:seed` only if you want the demo communities. Start the service with `npm start`.
-
-In Vercel, add a rewrite from `/api/(.*)` to `https://YOUR-API-HOST/$1`, replacing `YOUR-API-HOST` with the deployed API host (for example, `your-api.onrender.com`). This keeps browser requests and session cookies on the Vercel origin while forwarding API traffic to the Node service. Set `APP_ORIGIN` to the Vercel deployment's actual origin, then redeploy the API and frontend. If using a custom domain, use that domain as `APP_ORIGIN`.
 
 ### PostgreSQL integration test
 
