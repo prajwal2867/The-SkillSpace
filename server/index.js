@@ -3,7 +3,7 @@ import { pool } from './db.js';
 import { createClient } from 'redis';
 import { createMemoryRateLimiter, createRedisRateLimiter } from './rate-limit.js';
 
-const port = Number(process.env.API_PORT || 3000);
+const port = Number(process.env.PORT || process.env.API_PORT || 3000);
 let redisClient;
 let rateLimiter = createMemoryRateLimiter();
 
