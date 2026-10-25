@@ -28,6 +28,7 @@ This is not production authentication, billing, authorization, or shared communi
 
 ```text
 The SkillSpace/
+├── landing-page/            # Standalone Next.js, Tailwind, and Motion marketing page
 ├── src/
 │   ├── domain/data.js       # Categories, communities, demo users, reviews, chats, and notifications
 │   ├── services/store.js    # Browser localStorage persistence adapter
@@ -44,6 +45,8 @@ The SkillSpace/
 ├── package.json              # Project scripts and dependencies
 └── README.md                 # Project documentation
 ```
+
+The standalone marketing page lives in [`landing-page/`](landing-page/README.md). Run it independently with `cd landing-page`, `npm install`, and `npm run dev`; the existing Vite prototype remains unchanged.
 
 ## Getting Started
 

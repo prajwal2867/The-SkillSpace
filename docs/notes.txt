@@ -1,0 +1,5 @@
+remember how nptel has its marking scheme?
+25% weightage for assignments and 75% weitage for real tests
+
+take inspiration from nptel for logic for course assignments,
+take inspiration from iamneo for strict digital-testing system for users and backend admin dashboard.
