@@ -93,6 +93,7 @@ const {
 } = createModalViews({
   state,
   communities,
+  isVisibleCommunity,
   escapeHTML,
   addImageIcon,
   initials,
