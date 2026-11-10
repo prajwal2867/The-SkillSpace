@@ -22,12 +22,13 @@ function creatorCommunityView() {
             <input type="text" name="text" maxlength="1000" placeholder="Share something with the community..." required>
             <button type="submit">Post</button>
           </form>
-          ${communityPosts.length ? '<div class="community-feed">' + communityPosts.map((post) => '<article class="community-feed-post"><div class="community-feed-post-header"><strong>' + escapeHTML(post.name || 'Community member') + '</strong><span>' + escapeHTML(post.role || 'Member') + ' · ' + escapeHTML(post.time || 'Recently') + '</span></div><p>' + escapeHTML(post.text || '') + '</p><div class="community-feed-post-actions"><span>♡ ' + Number(post.likes || 0) + ' likes</span><span>▢ ' + Number(post.comments || 0) + ' comments</span>' + (post.demo ? '<span class="demo-activity-label">Sample activity</span>' : '') + '</div></article>').join('') + '</div>' : '<div class="community-feed-empty"><strong>Your community starts here.</strong><p>No posts yet. Share the first update, welcome members or start a discussion.</p></div>'}
+
           <div class="creator-feed-toolbar">
             <button class="creator-filter active">All</button>
             <button class="creator-filter">General discussion</button>
             <button class="creator-settings-button" aria-label="Filter posts">☷</button>
           </div>
+          ${communityPosts.length ? '<div class="community-feed">' + communityPosts.map((post) => '<article class="community-feed-post"><div class="community-feed-post-header"><strong>' + escapeHTML(post.name || 'Community member') + '</strong><span>' + escapeHTML(post.role || 'Member') + ' · ' + escapeHTML(post.time || 'Recently') + '</span></div><p>' + escapeHTML(post.text || '') + '</p><div class="community-feed-post-actions"><span>♡ ' + Number(post.likes || 0) + ' likes</span><span>▢ ' + Number(post.comments || 0) + ' comments</span>' + (post.demo ? '<span class="demo-activity-label">Sample activity</span>' : '') + '</div></article>').join('') + '</div>' : '<div class="community-feed-empty"><strong>Your community starts here.</strong><p>No posts yet. Share the first update, welcome members or start a discussion.</p></div>'}
           ${isOwner ? `<section class="setup-card">
             <div class="setup-card-heading"><span class="setup-progress ${completedSetupItems ? 'has-progress' : ''}" style="--setup-progress:${completedSetupItems * 25}%" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#invite-people">Invite 3 people</a></div>
