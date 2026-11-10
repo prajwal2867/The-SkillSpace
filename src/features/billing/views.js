@@ -148,24 +148,16 @@ function planModalContent() {
       <button class="modal-close" data-action="close-modal" aria-label="Close">&times;</button>
       <div class="plan-modal-logo" aria-label="SkillSpace"><span>skill</span>space</div>
       <h2 id="plan-modal-title">Create your community</h2>
-      <p class="plan-modal-subtitle">14-day creator trial · ${escapeHTML(planName)} ${price}/month <button type="button" class="plan-change-link" data-action="change-plan">(change)</button></p>
+      <p class="plan-modal-subtitle">14-day free trial for the community host · ${escapeHTML(planName)} ${price}/month <button type="button" class="plan-change-link" data-action="change-plan">(change)</button></p>
       <form id="planCheckoutForm" class="plan-checkout-form">
         <div class="plan-field-group">
           <label for="communityName">Group name</label>
           <input id="communityName" name="communityName" maxlength="30" placeholder="Group name" required autofocus>
           <div class="plan-field-hint"><em>You can change this later</em><span id="communityNameCount">0 / 30</span></div>
         </div>
-        <div class="plan-card-input" aria-label="Payment card details">
-          <span class="plan-card-icon">▣</span>
-          <input name="cardNumber" data-card-step="cardNumber" inputmode="numeric" maxlength="16" placeholder="Card number" aria-label="Card number" required>
-          <input name="expiryMonth" data-card-step="expiryMonth" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Expiration month" required>
-          <span class="plan-card-expiry-separator" aria-hidden="true">/</span>
-          <input name="expiryYear" data-card-step="expiryYear" inputmode="numeric" maxlength="2" placeholder="YY" aria-label="Expiration year" required>
-          <input name="cvc" data-card-step="cvc" inputmode="numeric" maxlength="3" placeholder="CVC" aria-label="CVC" required>
-        </div>
-        <button type="submit" class="plan-trial-button" disabled>START CREATOR FREE TRIAL</button>
+        <button type="submit" class="plan-trial-button" disabled>START FREE TRIAL</button>
       </form>
-      <p class="plan-modal-note">This trial is for the community owner only. Members can join without starting a trial or entering payment details. Checkout is a demo flow; no payment is processed.</p>
+      <p class="plan-modal-note">This 14-day trial applies to the community host’s SkillSpace subscription only. Members do not pay this subscription; any member price will be set by the host. No payment details are needed for this demo, and no payment is processed.</p>
     </section>
   `;
 }
