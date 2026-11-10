@@ -222,7 +222,6 @@ export function createAuthEvents(deps) {
         };
         communities.push(community);
         store.saveCommunity(community);
-        state.joinedCommunities = [...new Set([...(state.joinedCommunities || []), community.id])];
         state.selected = community.id;
         state.communityTab = 'Community';
         state.view = 'creator-community';
