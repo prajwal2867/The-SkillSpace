@@ -1,7 +1,7 @@
 /**
  * Profile feature views and contribution-history presentation.
  */
-export function createProfileFeature({ state, store, communities, isVisibleCommunity, escapeHTML, initials }) {
+export function createProfileFeature({ state, store, communities, isVisibleCommunity, escapeHTML, addImageIcon, initials }) {
 function getContributionData(selectedGroup = 'All communities') {
   const today = new Date('2026-09-03T12:00:00Z');
   const days = [];
@@ -38,6 +38,17 @@ function getContributionData(selectedGroup = 'All communities') {
     days.push({ dateStr, count, level });
   }
   return { days, totalContributions };
+}
+
+
+function profileCommunityRow(community) {
+  const iconSource = community.creatorAvatar || community.cover;
+  const iconMarkup = iconSource
+    ? `<img src="${escapeHTML(iconSource)}" alt="${escapeHTML(community.title)} icon">`
+    : addImageIcon('profile-community-placeholder-icon');
+  const isFree = community.priceType === 'Free' || community.price === 'Free' || community.price === 'Free trial';
+  const pricingLabel = community.priceType === 'Host set' ? 'Pricing set by host' : isFree ? 'Free' : 'Paid';
+  return `<div class="profile-community-row"><button type="button" class="profile-community-icon" data-action="select-community" data-id="${escapeHTML(community.id)}" aria-label="Open ${escapeHTML(community.title)}">${iconMarkup}</button><span class="profile-community-info"><button type="button" class="profile-community-title" data-action="select-community" data-id="${escapeHTML(community.id)}">${escapeHTML(community.title)}</button><span>${escapeHTML(community.members || '0')} members · ${pricingLabel}</span></span></div>`;
 }
 
 function profileView() {
