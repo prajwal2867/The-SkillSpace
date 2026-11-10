@@ -16,10 +16,17 @@ export function createDiscoveryFeature(deps) {
     addImageIcon
   } = deps;
 
+function parseMemberCount(value) {
+  const match = String(value ?? '').trim().toLowerCase().replace(/,/g, '').match(/^([\\d.]+)\\s*([km])?$/);
+  if (!match) return Number.parseFloat(value) || 0;
+  const multiplier = match[2] === 'm' ? 1000000 : match[2] === 'k' ? 1000 : 1;
+  return Number(match[1]) * multiplier;
+}
+
 function filteredCommunities() {
   const query = state.submittedQuery.toLowerCase();
   const result = communities.filter(isVisibleCommunity).filter((community) => (!query || `${community.title} ${community.description} ${community.category}`.toLowerCase().includes(query)) && (state.category === 'Trending' || community.category === state.category) && (state.price === 'All' || community.priceType === state.price) && (state.access === 'All' || community.accessType === state.access));
-  if (state.sort === 'Top') result.sort((a, b) => parseFloat(b.members) - parseFloat(a.members));
+  if (state.sort === 'Top') result.sort((a, b) => parseMemberCount(b.members) - parseMemberCount(a.members));
   return result;
 }
 
