@@ -148,7 +148,7 @@ function planModalContent() {
       <button class="modal-close" data-action="close-modal" aria-label="Close">&times;</button>
       <div class="plan-modal-logo" aria-label="SkillSpace"><span>skill</span>space</div>
       <h2 id="plan-modal-title">Create your community</h2>
-      <p class="plan-modal-subtitle">14-day free trial of ${escapeHTML(planName)} ${price}/month <button type="button" class="plan-change-link" data-action="change-plan">(change)</button></p>
+      <p class="plan-modal-subtitle">14-day creator trial · ${escapeHTML(planName)} ${price}/month <button type="button" class="plan-change-link" data-action="change-plan">(change)</button></p>
       <form id="planCheckoutForm" class="plan-checkout-form">
         <div class="plan-field-group">
           <label for="communityName">Group name</label>
@@ -163,9 +163,9 @@ function planModalContent() {
           <input name="expiryYear" data-card-step="expiryYear" inputmode="numeric" maxlength="2" placeholder="YY" aria-label="Expiration year" required>
           <input name="cvc" data-card-step="cvc" inputmode="numeric" maxlength="3" placeholder="CVC" aria-label="CVC" required>
         </div>
-        <button type="submit" class="plan-trial-button" disabled>START FREE TRIAL</button>
+        <button type="submit" class="plan-trial-button" disabled>START CREATOR FREE TRIAL</button>
       </form>
-      <p class="plan-modal-note">Your 1st charge will be on ${chargeDate} for ${price}. We'll email you 3-days before to remind you. Cancel anytime with 1-click.</p>
+      <p class="plan-modal-note">This trial is for the community owner only. Members can join without starting a trial or entering payment details. Checkout is a demo flow; no payment is processed.</p>
     </section>
   `;
 }
