@@ -2,7 +2,7 @@ import './styles.css';
 import { createAppEvents } from './app/events.js';
 import { createAuthEvents } from './features/auth/events.js';
 import { validateAuthInput, isCheckoutReady } from './domain/validation.js';
-import { categories, chats, communities, demoUsers, dummyUsers, notifications } from './domain/data.js';
+import { categories, chats, communities, demoPosts, demoUsers, dummyUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 import { createDiscoveryFeature } from './features/discovery/views.js';
 import { createCommunityViews } from './features/communities/views.js';
@@ -47,6 +47,7 @@ const {
   state,
   store,
   communities,
+  demoPosts,
   escapeHTML,
   addImageIcon,
   initials
@@ -181,4 +182,5 @@ appEvents = createAppEvents({ state, store, communities, notifications, chats, r
 function bind() { return appEvents.bind(); }
 
 restoreSession();
+state.joinedCommunities = store.getMemberships();
 render();
