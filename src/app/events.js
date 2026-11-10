@@ -261,6 +261,10 @@ export function createAppEvents(deps) {
           render();
         }
       }
+    } else if (action === 'open-community') {
+      state.view = 'creator-community';
+      state.communityTab = 'Community';
+      render();
     } else if (action === 'leave') {
       const activeComm = communities.find(c => c.id === state.selected) || communities[0];
       if (activeComm) {
