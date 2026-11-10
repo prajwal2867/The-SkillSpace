@@ -72,7 +72,7 @@ export function createAppEvents(deps) {
     }
   
     document.querySelector('[data-community]')?.parentElement.addEventListener('click', (event) => { const cardElement = event.target.closest('[data-community]'); if (cardElement && !event.target.closest('button')) { state.selected = /^\d+$/.test(cardElement.dataset.community) ? Number(cardElement.dataset.community) : cardElement.dataset.community; state.view = 'detail'; render(); } });
-    document.querySelector('#postForm')?.addEventListener('submit', (event) => { event.preventDefault(); const text = new FormData(event.target).get('text'); store.addPost({ communityId: state.selected, name: store.user.name, role: 'Member', text, time: 'now' }); render(); showToast('Post published'); });
+    document.querySelector('#postForm')?.addEventListener('submit', (event) => { event.preventDefault(); const text = new FormData(event.target).get('text'); const activeCommunity = communities.find((community) => String(community.id) === String(state.selected)); store.addPost({ communityId: state.selected, name: store.user.name, role: String(activeCommunity?.ownerId) === String(store.user.id) ? 'Admin' : 'Member', text, time: 'now', likes: 0, comments: 0 }); render(); showToast('Post published'); });
     
     document.querySelector('#profileSettingsForm')?.addEventListener('submit', (event) => {
       event.preventDefault();
