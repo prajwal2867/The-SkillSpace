@@ -304,8 +304,8 @@ function detailView() {
               </div>` : ''}
 
               <!-- Prominent Join Group Button -->
-              <button class="skool-join-button ${isJoined ? 'joined' : ''}" data-action="${isJoined ? 'leave' : 'join'}">
-                ${isJoined ? '✓ JOINED' : 'JOIN GROUP'}
+              <button class="skool-join-button ${isJoined ? 'joined' : ''}" data-action="${isJoined ? 'open-community' : 'join'}">
+                ${isJoined ? 'OPEN COMMUNITY' : 'JOIN GROUP'}
               </button>
 
               <div class="sidebar-powered-by">
