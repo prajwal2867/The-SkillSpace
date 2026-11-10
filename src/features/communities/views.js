@@ -2,35 +2,39 @@
  * Community-facing page views.
  * These functions render existing UI and receive their dependencies explicitly.
  */
-export function createCommunityViews({ state, store, communities, escapeHTML, addImageIcon, initials }) {
+export function createCommunityViews({ state, store, communities, demoPosts = [], escapeHTML, addImageIcon, initials }) {
 function creatorCommunityView() {
   const community = communities.find((item) => item.id === state.selected) || communities[0];
   const isCreatedCommunity = String(community.id).startsWith('created-');
+  const isOwner = isCreatedCommunity && String(community.ownerId) === String(store.user?.id);
   const hasDescription = Boolean(community.description && community.description !== 'A private community for creators.');
   const hasCover = Boolean(community.cover);
   const completedSetupItems = [hasDescription, hasCover].filter(Boolean).length;
   const user = store.user || { name: 'Creator' };
   const userAvatar = user.pfp || community.creatorAvatar;
+  const communityPosts = [...store.posts.filter((post) => String(post.communityId) === String(community.id)), ...demoPosts.filter((post) => String(post.communityId) === String(community.id))];
   return `
     <main class="creator-community-page">
       <div class="creator-community-layout">
         <section class="creator-community-main">
-          <div class="creator-composer" data-action="create-post">
-            ${userAvatar ? `<img src="${userAvatar}" alt="${escapeHTML(user.name)}" class="creator-avatar">` : `<span class="creator-avatar creator-avatar-fallback">${initials(user)}</span>`}
-            <span>Write something</span>
-          </div>
+          <form id="postForm" class="creator-composer">
+            ${userAvatar ? '<img src="' + escapeHTML(userAvatar) + '" alt="' + escapeHTML(user.name) + '" class="creator-avatar">' : '<span class="creator-avatar creator-avatar-fallback">' + initials(user) + '</span>'}
+            <input type="text" name="text" maxlength="1000" placeholder="Share something with the community..." required>
+            <button type="submit">Post</button>
+          </form>
+          ${communityPosts.length ? '<div class="community-feed">' + communityPosts.map((post) => '<article class="community-feed-post"><div class="community-feed-post-header"><strong>' + escapeHTML(post.name || 'Community member') + '</strong><span>' + escapeHTML(post.role || 'Member') + ' · ' + escapeHTML(post.time || 'Recently') + '</span></div><p>' + escapeHTML(post.text || '') + '</p><div class="community-feed-post-actions"><span>♡ ' + Number(post.likes || 0) + ' likes</span><span>▢ ' + Number(post.comments || 0) + ' comments</span>' + (post.demo ? '<span class="demo-activity-label">Sample activity</span>' : '') + '</div></article>').join('') + '</div>' : '<div class="community-feed-empty"><strong>Your community starts here.</strong><p>No posts yet. Share the first update, welcome members or start a discussion.</p></div>'}
           <div class="creator-feed-toolbar">
             <button class="creator-filter active">All</button>
             <button class="creator-filter">General discussion</button>
             <button class="creator-settings-button" aria-label="Filter posts">☷</button>
           </div>
-          <section class="setup-card">
+          ${isOwner ? `<section class="setup-card">
             <div class="setup-card-heading"><span class="setup-progress ${completedSetupItems ? 'has-progress' : ''}" style="--setup-progress:${completedSetupItems * 25}%" aria-hidden="true"></span><strong>Set up your group</strong><span class="setup-chevron">⌃</span></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#invite-people">Invite 3 people</a></div>
             <div class="setup-item ${hasDescription ? 'is-complete' : ''}"><span class="setup-circle">${hasDescription ? '✓' : ''}</span><a href="#group-description" data-action="community-settings">Add group description</a></div>
             <div class="setup-item ${hasCover ? 'is-complete' : ''}"><span class="setup-circle">${hasCover ? '✓' : ''}</span><a href="#cover-image" data-action="community-settings">Set cover image</a></div>
             <div class="setup-item"><span class="setup-circle"></span><a href="#first-post">Write your first post</a></div>
-          </section>
+          </section>` : ''}
         </section>
         <aside class="creator-community-sidebar">
           <div class="creator-group-card">
@@ -40,7 +44,7 @@ function creatorCommunityView() {
               <p class="creator-group-url">skillspace.in/${escapeHTML(community.slug || 'community')}</p>
               <p class="creator-private-label">♙ ${escapeHTML(community.accessType || 'Private')} group</p>
               <p class="creator-group-description">${escapeHTML(community.description || 'Add your group description here by clicking the “Settings” button.')}</p>
-              <div class="creator-stat-row"><div><strong>1</strong><span>Members</span></div><div><strong>0</strong><span>Online</span></div><div><strong>1</strong><span>Admins</span></div></div>
+              <div class="creator-stat-row"><div><strong>${escapeHTML(community.members || '1')}</strong><span>Members</span></div><div><strong>${escapeHTML(community.onlineCount || '0')}</strong><span>Online</span></div><div><strong>${escapeHTML(community.adminsCount || '1')}</strong><span>Admins</span></div></div>
               ${!isCreatedCommunity ? `<div class="creator-avatar-stack">
                 <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
@@ -50,7 +54,7 @@ function creatorCommunityView() {
                 <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
               </div>` : ''}
-              <button class="creator-settings-cta" type="button" data-action="community-settings">SETTINGS</button>
+              ${isOwner ? '<button class="creator-settings-cta" type="button" data-action="community-settings">SETTINGS</button>' : '<span class="creator-member-label">Community member</span>'}
             </div>
           </div>
           <p class="creator-powered-by">powered by <strong>skillspace</strong></p>
