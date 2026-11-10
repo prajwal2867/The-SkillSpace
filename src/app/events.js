@@ -252,7 +252,11 @@ export function createAppEvents(deps) {
       } else {
         const activeComm = communities.find(c => c.id === state.selected) || communities[0];
         if (activeComm && !state.joinedCommunities.includes(activeComm.id)) {
-          state.joinedCommunities.push(activeComm.id);
+          state.joinedCommunities = [...state.joinedCommunities, activeComm.id];
+          store.saveMemberships(state.joinedCommunities);
+          state.selected = activeComm.id;
+          state.communityTab = 'Community';
+          state.view = 'creator-community';
           showToast(`Joined ${activeComm.title}!`);
           render();
         }
@@ -261,6 +265,9 @@ export function createAppEvents(deps) {
       const activeComm = communities.find(c => c.id === state.selected) || communities[0];
       if (activeComm) {
         state.joinedCommunities = state.joinedCommunities.filter(id => id !== activeComm.id);
+        store.saveMemberships(state.joinedCommunities);
+        state.view = 'detail';
+        state.communityTab = 'About';
         showToast(`Left ${activeComm.title}`);
         render();
       }
@@ -322,9 +329,9 @@ export function createAppEvents(deps) {
       const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
       const selectedCommunity = communities.find((community) => String(community.id) === String(id));
       state.selected = id;
-      state.view = selectedCommunity && String(selectedCommunity.id).startsWith('created-') && String(selectedCommunity.ownerId) === String(store.user?.id)
-        ? 'creator-community'
-        : 'detail';
+      const isOwner = selectedCommunity && String(selectedCommunity.id).startsWith('created-') && String(selectedCommunity.ownerId) === String(store.user?.id);
+      const isMember = (state.joinedCommunities || []).some((joinedId) => String(joinedId) === String(id));
+      state.view = isOwner || isMember ? 'creator-community' : 'detail';
       state.selectedMediaIndex = 0;
       state.communityTab = 'About';
       state.brandMenu = false;
