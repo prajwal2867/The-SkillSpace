@@ -142,6 +142,7 @@ export function createAuthEvents(deps) {
         const user = findAuthUser(email, passwordHash) || store.findUser(email);
         if (!user || user.passwordHash !== passwordHash) return setAuthMessage('Invalid email or password.');
         store.saveSession(user);
+        state.joinedCommunities = store.getMemberships();
         syncOwnedCommunities();
         refreshHeader();
         if (state.selectedPlan) {
@@ -210,8 +211,9 @@ export function createAuthEvents(deps) {
           members: '1',
           onlineCount: '0',
           adminsCount: '1',
-          price: 'Free trial',
+          price: 'Free to join',
           priceType: 'Free',
+          creatorSubscription: { plan: state.selectedPlan || 'Hobby', trialDays: 14, status: 'trialing' },
           accessType: 'Private',
           category: 'Trending',
           cover: '',
