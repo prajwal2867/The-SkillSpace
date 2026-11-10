@@ -1,7 +1,7 @@
 /**
  * Shared application header and navigation rendering.
  */
-export function createHeader({ state, store, communities, escapeHTML, addImageIcon, initials, icon, chatItems, unreadChatCount }) {
+export function createHeader({ state, store, communities, isVisibleCommunity, escapeHTML, addImageIcon, initials, icon, chatItems, unreadChatCount }) {
 function header() {
   const user = store.user;
   const activeComm = state.selected ? (communities.find(c => c.id === state.selected) || communities[0]) : null;
