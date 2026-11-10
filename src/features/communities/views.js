@@ -73,7 +73,8 @@ function profileCommunityRow(community) {
     ? `<img src="${escapeHTML(iconSource)}" alt="${escapeHTML(community.title)} icon">`
     : addImageIcon('profile-community-placeholder-icon');
   const isFree = community.priceType === 'Free' || community.price === 'Free' || community.price === 'Free trial';
-  return `<div class="profile-community-row"><button type="button" class="profile-community-icon" data-action="select-community" data-id="${escapeHTML(community.id)}" aria-label="Open ${escapeHTML(community.title)}">${iconMarkup}</button><span class="profile-community-info"><button type="button" class="profile-community-title" data-action="select-community" data-id="${escapeHTML(community.id)}">${escapeHTML(community.title)}</button><span>${escapeHTML(community.members || '0')} members · ${isFree ? 'Free' : 'Paid'}</span></span></div>`;
+  const pricingLabel = community.priceType === 'Host set' ? 'Pricing set by host' : isFree ? 'Free' : 'Paid';
+  return `<div class="profile-community-row"><button type="button" class="profile-community-icon" data-action="select-community" data-id="${escapeHTML(community.id)}" aria-label="Open ${escapeHTML(community.title)}">${iconMarkup}</button><span class="profile-community-info"><button type="button" class="profile-community-title" data-action="select-community" data-id="${escapeHTML(community.id)}">${escapeHTML(community.title)}</button><span>${escapeHTML(community.members || '0')} members · ${pricingLabel}</span></span></div>`;
 }
 
 function createCommunityView() {
