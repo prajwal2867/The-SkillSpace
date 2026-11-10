@@ -464,5 +464,8 @@ function restoreSession() { const session = store.session; if (!session?.token |
 let appEvents;
 function actions(action, element) { return appEvents.actions(action, element); }
 
+appEvents = createAppEvents({ state, store, communities, notifications, chats, render, showToast, mountAuthModal, closeAuthModal, getContributionData, renderCommunityGrid, isVisibleCommunity, syncOwnedCommunities, refreshHeader, hashPassword, findAuthUser, setAuthMessage, demoUsers, modalCardContent, bindAuth, restoreSession });
+function bind() { return appEvents.bind(); }
+
 restoreSession();
 render();
