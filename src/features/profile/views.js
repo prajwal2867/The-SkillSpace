@@ -37,7 +37,7 @@ function getContributionData(selectedGroup = 'All communities') {
 
     days.push({ dateStr, count, level });
   }
-  return { days, totalContributions: 0 };
+  return { days, totalContributions };
 }
 
 function profileView() {
