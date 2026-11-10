@@ -55,7 +55,7 @@ function creatorCommunityView() {
                 <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
                 <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
               </div>` : ''}
-              ${isOwner ? '<button class="creator-settings-cta" type="button" data-action="community-settings">SETTINGS</button>' : '<span class="creator-member-label">Community member</span>'}
+              ${isOwner ? '<button class="creator-settings-cta" type="button" data-action="community-settings">SETTINGS</button>' : '<div class="creator-member-label">Community member</div><button class="creator-settings-cta" type="button" data-action="leave">LEAVE COMMUNITY</button>'}
             </div>
           </div>
           <p class="creator-powered-by">powered by <strong>skillspace</strong></p>
