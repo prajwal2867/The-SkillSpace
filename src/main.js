@@ -1,5 +1,6 @@
 import './styles.css';
 import { createAppEvents } from './app/events.js';
+import { validateAuthInput, isCheckoutReady } from './domain/validation.js';
 import { categories, chats, communities, demoUsers, dummyUsers, notifications } from './domain/data.js';
 import { store } from './services/store.js';
 import { createDiscoveryFeature } from './features/discovery/views.js';
@@ -257,11 +258,9 @@ function bindAuth() {
       event.preventDefault();
       state.authMessage = '';
       const data = Object.fromEntries(new FormData(event.target));
-      const email = data.email.trim().toLowerCase();
-      if (!email || !data.password || (state.authMode === 'register' && (!data.firstName?.trim() || !data.lastName?.trim() || !data.confirmPassword))) return setAuthMessage('All fields are required.');
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAuthMessage('Please enter a valid email address.');
-      if (data.password.length < 8) return setAuthMessage('Password must be at least 8 characters.');
-      if (state.authMode === 'register' && data.password !== data.confirmPassword) return setAuthMessage('Passwords do not match.');
+      const email = String(data.email || '').trim().toLowerCase();
+      const validationMessage = validateAuthInput(data, state.authMode);
+      if (validationMessage) return setAuthMessage(validationMessage);
       const passwordHash = await hashPassword(data.password);
       if (state.authMode === 'register') {
         if (findAuthUser(email, passwordHash) || store.findUser(email)) return setAuthMessage('An account with this email already exists.');
@@ -300,13 +299,13 @@ function bindAuth() {
     const expiryYear = planCheckoutForm.querySelector('[name="expiryYear"]');
     const cvc = planCheckoutForm.querySelector('[name="cvc"]');
     const updateTrialButton = () => {
-      const month = Number(expiryMonth.value);
-      const isReady = communityName.value.trim().length > 0
-        && /^\d{1,16}$/.test(cardNumber.value)
-        && /^\d{1,2}$/.test(expiryMonth.value)
-        && /^\d{2}$/.test(expiryYear.value)
-        && /^\d{3}$/.test(cvc.value)
-        && month >= 1 && month <= 12;
+      const isReady = isCheckoutReady({
+        communityName: communityName.value,
+        cardNumber: cardNumber.value,
+        expiryMonth: expiryMonth.value,
+        expiryYear: expiryYear.value,
+        cvc: cvc.value
+      });
       trialButton.disabled = !isReady;
     };
 
