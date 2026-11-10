@@ -62,6 +62,7 @@ const {
   communities,
   isVisibleCommunity,
   escapeHTML,
+  addImageIcon,
   initials
 });
 
