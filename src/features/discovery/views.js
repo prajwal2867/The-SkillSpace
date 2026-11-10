@@ -17,7 +17,7 @@ export function createDiscoveryFeature(deps) {
   } = deps;
 
 function parseMemberCount(value) {
-  const match = String(value ?? '').trim().toLowerCase().replace(/,/g, '').match(/^([\\d.]+)\\s*([km])?$/);
+  const match = String(value ?? '').trim().toLowerCase().replace(/,/g, '').match(/^([\d.]+)\s*([km])?$/);
   if (!match) return Number.parseFloat(value) || 0;
   const multiplier = match[2] === 'm' ? 1000000 : match[2] === 'k' ? 1000 : 1;
   return Number(match[1]) * multiplier;
