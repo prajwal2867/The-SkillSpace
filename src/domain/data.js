@@ -440,6 +440,34 @@ export const communities = [
   }
 ];
 
+
+export const demoPosts = [
+  { id: 'demo-1a', communityId: 1, name: 'Simran Iyer', role: 'Member', time: '2h ago', text: 'Sharing a quick workflow: storyboard first, generate consistent reference frames, then animate each shot. The results are much easier to control than prompting every clip from scratch.', likes: 48, comments: 12, demo: true },
+  { id: 'demo-1b', communityId: 1, name: 'Harsh Pillai', role: 'Admin', time: '1d ago', text: 'This week’s challenge: create a 15-second product story using only AI-generated visuals. Post your first cut so the group can give feedback.', likes: 86, comments: 21, demo: true },
+  { id: 'demo-2a', communityId: 2, name: 'Krishna Mahajan', role: 'Admin', time: '3h ago', text: 'Editing tip: cut on movement, not just on the beat. It makes transitions feel intentional and keeps the pacing natural.', likes: 34, comments: 8, demo: true },
+  { id: 'demo-2b', communityId: 2, name: 'Saanvi Deshmukh', role: 'Member', time: '1d ago', text: 'Tried the new keyframe exercise today. The before-and-after difference is huge. Sharing this as motivation for anyone still practising the basics!', likes: 27, comments: 6, demo: true },
+  { id: 'demo-3a', communityId: 3, name: 'Ananya Mishra', role: 'Admin', time: '4h ago', text: 'A reminder for realistic renders: lighting direction, focal length and material texture matter more than adding another paragraph to the prompt.', likes: 61, comments: 14, demo: true },
+  { id: 'demo-3b', communityId: 3, name: 'Vikram Bhatt', role: 'Member', time: '2d ago', text: 'What are your go-to settings for consistent character references across multiple scenes? Let’s collect a few reliable workflows here.', likes: 19, comments: 17, demo: true },
+  { id: 'demo-4a', communityId: 4, name: 'Varun Patil', role: 'Admin', time: '1h ago', text: 'Agency builders: this week, pick one repetitive task in a real business and map the process before choosing tools. Good automation starts with a clear workflow.', likes: 103, comments: 26, demo: true },
+  { id: 'demo-4b', communityId: 4, name: 'Nitin Goyal', role: 'Member', time: '1d ago', text: 'Sharing a lesson from a recent client project: a small, dependable automation that saves 30 minutes daily is often more valuable than a flashy system nobody maintains.', likes: 72, comments: 18, demo: true },
+  { id: 'demo-5a', communityId: 5, name: 'Simran Iyer', role: 'Admin', time: '5h ago', text: 'Creator check-in: what are you building this week? Share one concrete goal and one thing you need feedback on. Let’s help each other ship.', likes: 42, comments: 23, demo: true },
+  { id: 'demo-5b', communityId: 5, name: 'Aditi Joshi', role: 'Member', time: '2d ago', text: 'I finally outlined my first mini-course. Breaking it into small lessons made the whole project feel much more manageable.', likes: 31, comments: 9, demo: true },
+  { id: 'demo-6a', communityId: 6, name: 'Riya Pillai', role: 'Admin', time: '6h ago', text: 'Pitch review thread: post your UGC portfolio link and the kind of brands you want to work with. Keep the feedback specific and constructive.', likes: 28, comments: 16, demo: true },
+  { id: 'demo-6b', communityId: 6, name: 'Ishaan Chatterjee', role: 'Member', time: '1d ago', text: 'A short personalised pitch worked better for me than a long template. I mentioned one specific campaign idea and got a reply.', likes: 22, comments: 7, demo: true },
+  { id: 'demo-7a', communityId: 7, name: 'Nitin Goyal', role: 'Admin', time: '3h ago', text: 'Campaign teardown prompt: share the audience, creative angle and landing-page offer together. Looking at those pieces in isolation hides the real problem.', likes: 56, comments: 13, demo: true },
+  { id: 'demo-7b', communityId: 7, name: 'Pooja Kulkarni', role: 'Member', time: '2d ago', text: 'We tested three new hooks this week. The simplest one won. Clear messaging beat clever wording again.', likes: 37, comments: 11, demo: true },
+  { id: 'demo-8a', communityId: 8, name: 'Yash Mishra', role: 'Admin', time: '7h ago', text: 'Small steps count. This week’s prompt: publish one thing you have been putting off, even if it is not perfect yet.', likes: 24, comments: 10, demo: true },
+  { id: 'demo-8b', communityId: 8, name: 'Kavya Nair', role: 'Member', time: '3d ago', text: 'Started my newsletter draft today. I used to think I needed the whole plan first; writing the first paragraph was enough to get moving.', likes: 18, comments: 5, demo: true },
+  { id: 'demo-9a', communityId: 9, name: 'Vikram Bhatt', role: 'Admin', time: '2h ago', text: 'Faceless content still needs a recognisable point of view. Build a repeatable visual identity instead of chasing every trend.', likes: 67, comments: 19, demo: true },
+  { id: 'demo-9b', communityId: 9, name: 'Aditya Singh', role: 'Member', time: '1d ago', text: 'Batching scripts before editing saved me a lot of context switching. Sharing this in case anyone else is juggling multiple pages.', likes: 29, comments: 8, demo: true },
+  { id: 'demo-10a', communityId: 10, name: 'Saanvi Deshmukh', role: 'Admin', time: '4h ago', text: 'Welcome to the Hub! Introduce what you create, what you are learning and one kind of collaboration you would love to find here.', likes: 91, comments: 32, demo: true },
+  { id: 'demo-10b', communityId: 10, name: 'Shaurya Bhatia', role: 'Member', time: '1d ago', text: 'Looking for a podcast editor who enjoys tech and startup stories. Happy to swap feedback and help with show notes too.', likes: 36, comments: 14, demo: true },
+  { id: 'demo-11a', communityId: 11, name: 'Rohan Reddy', role: 'Admin', time: '5h ago', text: 'Developer discussion: what security checks do you add before deploying a contract? Share practical tools and lessons from audits.', likes: 74, comments: 20, demo: true },
+  { id: 'demo-11b', communityId: 11, name: 'Aarav Malhotra', role: 'Member', time: '2d ago', text: 'I have been revisiting the basics of gas optimisation. The biggest gains came from understanding storage writes rather than micro-optimising syntax.', likes: 33, comments: 9, demo: true },
+  { id: 'demo-12a', communityId: 12, name: 'Maya Kapoor', role: 'Admin', time: '2h ago', text: 'Weekly check-in: share one habit you are working on and one small win from the last seven days. Progress is easier to sustain when we make it visible.', likes: 45, comments: 15, demo: true },
+  { id: 'demo-12b', communityId: 12, name: 'Arjun Mehta', role: 'Member', time: '1d ago', text: 'The 20-minute focus block worked surprisingly well for me this week. Keeping the goal small helped me stay consistent.', likes: 26, comments: 6, demo: true }
+];
+
 export const notifications = [
   { user: 'Harsh Pillai', text: 'posted a new announcement', time: '9h', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
   { user: 'Varun Patil', text: 'shared a new lesson', time: '12h', avatar: 'https://randomuser.me/api/portraits/men/44.jpg' },
