@@ -104,6 +104,7 @@ const { header } = createHeader({
   state,
   store,
   communities,
+  isVisibleCommunity,
   escapeHTML,
   addImageIcon,
   initials,
