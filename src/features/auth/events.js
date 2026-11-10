@@ -1,5 +1,5 @@
 /** Event handlers for authentication and community/plan modals. */
-import { isCheckoutReady, validateAuthInput } from '../../domain/validation.js';
+import { validateAuthInput } from '../../domain/validation.js';
 export function createAuthEvents(deps) {
   const { state, communities, isVisibleCommunity, store, modalCardContent, closeAuthModal, render, showToast, setAuthMessage, hashPassword, findAuthUser, syncOwnedCommunities, refreshHeader } = deps;
 
@@ -162,39 +162,14 @@ export function createAuthEvents(deps) {
     if (planCheckoutForm) {
       const communityName = planCheckoutForm.querySelector('[name="communityName"]');
       const trialButton = planCheckoutForm.querySelector('.plan-trial-button');
-      const cardNumber = planCheckoutForm.querySelector('[name="cardNumber"]');
-      const expiryMonth = planCheckoutForm.querySelector('[name="expiryMonth"]');
-      const expiryYear = planCheckoutForm.querySelector('[name="expiryYear"]');
-      const cvc = planCheckoutForm.querySelector('[name="cvc"]');
       const updateTrialButton = () => {
-        const isReady = isCheckoutReady({
-          communityName: communityName.value,
-          cardNumber: cardNumber.value,
-          expiryMonth: expiryMonth.value,
-          expiryYear: expiryYear.value,
-          cvc: cvc.value
-        });
-        trialButton.disabled = !isReady;
+        trialButton.disabled = !String(communityName?.value || '').trim();
       };
-  
+
       communityName?.addEventListener('input', (event) => {
         const counter = document.querySelector('#communityNameCount');
         if (counter) counter.textContent = `${event.target.value.length} / 30`;
         updateTrialButton();
-      });
-  
-      const cardSteps = [...planCheckoutForm.querySelectorAll('[data-card-step]')];
-      cardSteps.forEach((field, index) => {
-        field.addEventListener('input', (event) => {
-          event.target.value = event.target.value.replace(/\D/g, '').slice(0, Number(event.target.maxLength));
-          if (event.target.value.length === Number(event.target.maxLength)) cardSteps[index + 1]?.focus();
-          updateTrialButton();
-        });
-        field.addEventListener('keydown', (event) => {
-          if (event.key === 'Backspace' && !event.target.value && index > 0) {
-            cardSteps[index - 1].focus();
-          }
-        });
       });
       updateTrialButton();
   
@@ -211,8 +186,8 @@ export function createAuthEvents(deps) {
           members: '1',
           onlineCount: '0',
           adminsCount: '1',
-          price: 'Free to join',
-          priceType: 'Free',
+          price: 'Set by host',
+          priceType: 'Host set',
           creatorSubscription: { plan: state.selectedPlan || 'Hobby', trialDays: 14, status: 'trialing' },
           accessType: 'Private',
           category: 'Trending',
