@@ -1,5 +1,5 @@
 /** Event handlers for authentication and community/plan modals. */
-import { validateAuthInput } from '../../domain/validation.js';
+import { isCheckoutReady, validateAuthInput } from '../../domain/validation.js';
 export function createAuthEvents(deps) {
   const { state, communities, isVisibleCommunity, store, modalCardContent, closeAuthModal, render, showToast, setAuthMessage, hashPassword, findAuthUser, syncOwnedCommunities, refreshHeader } = deps;
 
