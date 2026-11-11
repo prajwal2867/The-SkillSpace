@@ -1,4 +1,4 @@
-import { dummyUsers } from '../../dummy_data.js';
+import { dummyUsers } from './fixtures/dummy-data.js';
 
 export const categories = ['Trending', 'Hobbies', 'Music', 'Money', 'Spirituality', 'Tech', 'Health', 'Sports', 'Self-improvement'];
 
