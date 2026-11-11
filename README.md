@@ -1,96 +1,76 @@
 # SkillSpace
 
-SkillSpace is a browser-based prototype for discovering, joining, and creating online communities for creators, coaches, educators, and learners. The current build focuses on validating the product experience and visual language before the planned production migration.
+SkillSpace is a browser-based prototype for discovering, joining, and creating online learning communities. It is a Vite single-page application built with vanilla JavaScript ES modules and CSS.
 
-## Current Progress
+## Current scope
 
-The Vite prototype currently includes:
+The prototype currently includes:
+- Community discovery, search, filtering, sorting, details, and membership actions.
+- Registration and login prototype flows.
+- Community creation and creator-plan presentation.
+- Local profiles, settings, seeded activity, and demo inbox UI.
+- Browser-side persistence through localStorage.
 
-- Community discovery with category, price, access, search, and sorting filters.
-- Community detail pages with media galleries, curriculum highlights, reviews, creator information, and membership actions.
-- Login, registration, password recovery, and code-login prototype dialogs.
-- Local profile and settings screens, including profile editing, contribution heatmaps, theme switching, affiliates, notifications, chat, and payment settings surfaces.
-- Local join/leave membership state and profile membership views.
-- Community creation flow with plan selection, a prototype checkout form, and a creator community setup page.
-- Local post creation, chat notifications, and seeded community activity.
-- Responsive styling with light/dark themes, CSS design tokens, and vanilla JavaScript ES modules.
+**Prototype limitations:** authentication, authorization, payments, messaging delivery, and shared persistence are not production services. User data and application state are stored in the current browser. Checkout is a presentation flow and does not charge a payment method.
 
-This is not production authentication, billing, authorization, or shared community storage. User data, sessions, posts, memberships, and created communities are stored in the browser with `localStorage`; checkout does not charge a real payment method.
-
-## Tech Stack
+## Tech stack
 
 - JavaScript ES modules and HTML5
-- Vanilla CSS with custom properties, Flexbox, and CSS Grid
-- [Vite](https://vitejs.dev/) for development and production builds
-- Inter from Google Fonts
+- Vanilla CSS
+- Vite
+- Node.js and npm for tooling and tests
 
-## Project Structure
+## Repository layout
 
 ```text
-The SkillSpace/
-├── landing-page/            # Standalone Next.js, Tailwind, and Motion marketing page
-├── src/
-│   ├── domain/data.js       # Categories, communities, demo users, reviews, chats, and notifications
-│   ├── services/store.js    # Browser localStorage persistence adapter
-│   ├── main.js              # Application state, rendering, routing, and event handling
-│   └── styles.css           # Design tokens, responsive layout, and component styles
+.
+├── .github/workflows/       # CI workflow
 ├── docs/
+│   ├── archive/             # Superseded architecture drafts
+│   ├── product-decisions/   # Product notes and decisions
 │   ├── development_goals.md
-│   ├── system_architecture_1.md
 │   └── system_architecture_2.md
-├── dummy_data.js            # Generated users and prototype activity data
-├── generate_data.js         # Mock data generator
-├── generate_users.js        # User fixture generator
-├── index.html               # Vite entry document
-├── package.json              # Project scripts and dependencies
-└── README.md                 # Project documentation
+├── src/
+│   ├── app/                 # Composition root, state, routing, app events
+│   ├── domain/              # Domain data, fixtures, and validation
+│   ├── features/            # Auth, communities, discovery, payments, etc.
+│   ├── services/            # Browser persistence adapter
+│   ├── shared/              # Shared UI, utilities, and constants
+│   ├── styles/              # Canonical stylesheet entry point and styles
+│   └── main.js              # Vite JavaScript entry point
+├── test/                    # Node.js unit tests
+├── index.html               # Vite HTML entry point
+├── package.json
+└── package-lock.json
 ```
 
-The standalone marketing page lives in [`landing-page/`](landing-page/README.md). Run it independently with `cd landing-page`, `npm install`, and `npm run dev`; the existing Vite prototype remains unchanged.
+## Getting started
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js `20.19+` or `22.12+`
-- npm
-
-### Install and run
+Requirements: Node.js 20.19+ or 22.12+, and npm.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173`.
+Vite prints the local development URL (normally http://localhost:5173).
 
-### Production build
+## Build and test
 
 ```bash
+npm test
 npm run build
 npm run preview
 ```
 
-The current production build completes successfully with Vite.
+The production build is generated in dist/. It is intentionally not committed; Vercel and local builds generate it when needed.
 
-## Data and Prototype Behavior
+## Demo data
 
-The application imports seeded community and user data from `src/domain/data.js` and `dummy_data.js`. The generator scripts use random values, so generated fixtures should be treated as demo data rather than deterministic test fixtures. Browser state is kept under versioned `skillspace_*` localStorage keys; clearing site storage resets the local session and created content.
+Seed data used by the prototype lives in src/domain/fixtures/dummy-data.js and is imported as an ES module. Treat these records as synthetic demo fixtures, not real user data.
 
-## Roadmap
+## Architecture notes
 
-Future development plans and detailed product direction are documented in the docs folder, particularly in the architecture and development goals notes.
-
-The architecture documents describe the planned migration from this browser prototype to a modular monolith with:
-
-- A real client feature/domain structure and URL routing.
-- Validated contracts and repository interfaces.
-- Server-side identity, authorization, memberships, entitlements, and payments.
-- PostgreSQL as the transactional source of truth, with Redis and durable jobs where needed.
-- Tests, accessibility checks, observability, moderation, media handling, and operational safeguards.
-
-See [`docs/development_goals.md`](docs/development_goals.md) for the staged delivery plan and [`docs/system_architecture_2.md`](docs/system_architecture_2.md) for the target production architecture.
-
-## Contributing
-
-Keep prototype changes focused on validating product behavior. When adding production-oriented functionality, follow the boundaries and exit criteria in the development goals before expanding `src/main.js`.
+- docs/system_architecture_2.md is the current target architecture specification.
+- docs/development_goals.md describes the staged migration plan.
+- Older architecture material is retained under docs/archive/ for historical context.

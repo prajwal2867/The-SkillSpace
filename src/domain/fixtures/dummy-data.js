@@ -1249,10 +1249,6 @@ const dummyCourses = [
   }
 ];
 
-// Expose globally for browser
-window.dummyUsers = dummyUsers;
-window.dummyPosts = dummyPosts;
-window.dummyCourses = dummyCourses;
 
 export { dummyUsers, dummyPosts, dummyCourses };
 
