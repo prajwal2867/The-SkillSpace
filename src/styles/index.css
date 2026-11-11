@@ -1,0 +1,3 @@
+/* Central stylesheet entry point. The legacy bundle remains in src/styles.css
+   for compatibility while styles are migrated in smaller, testable slices. */
+@import '../styles.css';
