@@ -2,7 +2,7 @@
  * Plans and checkout presentation.
  * Payment processing is intentionally not implemented in this frontend module.
  */
-export function createBillingFeature({ state, escapeHTML }) {
+export function createPaymentsFeature({ state, escapeHTML }) {
 function selectPlanView() {
   const isYearly = state.planBilling === 'yearly';
   const hobbyPrice = isYearly ? '$7.50' : '$9';
