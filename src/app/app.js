@@ -12,7 +12,8 @@ import { createBillingFeature } from './features/billing/views.js';
 import { createModalViews } from './features/auth/modals.js';
 import { createHeader } from './header.js';
 import { state } from './state.js';
-import { addImageIcon, escapeHTML, icon, initials } from '../shared/ui.js';
+import { addImageIcon, icon } from '../shared/components/icons.js';
+import { escapeHTML, initials } from '../shared/utils/html.js';
 import { createViewRouter } from './router.js';
 import { createMessagingFeature } from '../features/messaging/index.js';
 
@@ -82,7 +83,7 @@ const {
 const {
   selectPlanView,
   planModalContent
-} = createBillingFeature({
+} = createPaymentsFeature({
   state,
   escapeHTML
 });
